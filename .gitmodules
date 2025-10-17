@@ -1,0 +1,3 @@
+[submodule "sp_2501"]
+	path = sp_2501
+	url = git@github.com:jphacks/sp_2501.git
