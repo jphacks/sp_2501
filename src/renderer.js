@@ -11,6 +11,7 @@ startButton.addEventListener('click', async () => {
     interval: intervalInput.value,
     resolution: resolutionSelect.value,
   };
+  startButton.document = "うんち";
 
   console.log('UI -> Mainへ録画開始をリクエスト:', settings);
   statusText.textContent = 'バックエンドに開始リクエストを送信中...';
