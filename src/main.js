@@ -1,7 +1,7 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog } = require('electron'); // ★ dialog を追加
 const path = require('path');
 const { spawn } = require('child_process'); // Pythonスクリプト実行に必要
-const axios = require('axios');             // HTTPリクエストに必要
+const axios = require('axios');           // HTTPリクエストに必要
 
 let pythonProcess = null; // Pythonの子プロセスを格納する変数
 
@@ -98,3 +98,23 @@ ipcMain.handle('recording:stop', async (event) => {
     return { status: 'error', message: 'バックエンドサーバーとの通信に失敗しました。' };
   }
 });
+
+// ★★★ ここからが追加された部分 ★★★
+// 'select-folder' リクエストの処理
+ipcMain.handle('select-folder', async () => {
+  console.log('Main受信: フォルダ選択ダイアログを開きます');
+  // OS標準のフォルダ選択ダイアログを表示します
+  const result = await dialog.showOpenDialog({
+    // 'openDirectory' を指定することで、ファイルではなくフォルダを選択できるようになります
+    properties: ['openDirectory'] 
+  });
+
+  // ユーザーがダイアログをキャンセルした場合
+  if (result.canceled) {
+    return null; // 何も選択されなかったことを示すためにnullを返す
+  } else {
+    // 選択されたフォルダのパスは配列で返ってくるため、最初の要素を取得します
+    return result.filePaths[0];
+  }
+});
+// ★★★ ここまでが追加された部分 ★★★
