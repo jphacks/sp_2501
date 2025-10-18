@@ -1,3 +1,6 @@
+import { promises as fs } from "node:fs";
+import os from "node:os";
+import { join } from "node:path";
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
 
@@ -29,19 +32,18 @@ type DiffResponsePayload = {
   output_text?: string;
 };
 
-const isFile = (value: unknown): value is File => {
-  return typeof File !== "undefined" && value instanceof File;
+type ScreenshotPayload = {
+  filename?: unknown;
+  data?: unknown;
 };
 
-const fileToDataUri = async (file: File) => {
-  const arrayBuffer = await file.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
-  const mime = file.type || "application/octet-stream";
-  return {
-    dataUri: `data:${mime};base64,${buffer.toString("base64")}`,
-    size: buffer.byteLength,
-    mime,
-  };
+type ParsedScreenshot = {
+  filename: string;
+  mime: string;
+  base64: string;
+  buffer: Buffer;
+  dataUri: string;
+  tempPath?: string;
 };
 
 const extractImageFromResponse = (response: DiffResponsePayload) => {
@@ -91,6 +93,62 @@ const extractTextualFallback = (response: DiffResponsePayload) => {
   return null;
 };
 
+const parseScreenshot = (payload: ScreenshotPayload, index: number): ParsedScreenshot => {
+  const filename =
+    typeof payload.filename === "string" && payload.filename.trim().length > 0
+      ? payload.filename.trim()
+      : `image-${index + 1}.png`;
+
+  if (typeof payload.data !== "string") {
+    throw new Error(`screenshots[${index}].data must be a base64 Data URI string.`);
+  }
+
+  const dataUriMatch = payload.data.match(/^data:(.+?);base64,(.+)$/);
+
+  if (!dataUriMatch) {
+    throw new Error(
+      `screenshots[${index}].data is not a valid base64 Data URI (expected "data:<mime>;base64,<payload>").`,
+    );
+  }
+
+  const [, mime, base64Raw] = dataUriMatch;
+  const base64 = base64Raw.replace(/\s+/g, "");
+
+  if (!mime) {
+    throw new Error(`screenshots[${index}].data does not contain a MIME type.`);
+  }
+
+  let buffer: Buffer;
+  try {
+    buffer = Buffer.from(base64, "base64");
+  } catch {
+    throw new Error(`screenshots[${index}].data could not be decoded from base64.`);
+  }
+
+  if (buffer.byteLength === 0) {
+    throw new Error(`screenshots[${index}].data decoded to an empty buffer.`);
+  }
+
+  return {
+    filename,
+    mime,
+    base64,
+    buffer,
+    dataUri: `data:${mime};base64,${base64}`,
+  };
+};
+
+const persistScreenshot = async (screenshot: ParsedScreenshot) => {
+  const sanitized = screenshot.filename.replace(/[^\w.-]/g, "_");
+  const targetPath = join(os.tmpdir(), sanitized);
+  try {
+    await fs.writeFile(targetPath, screenshot.buffer);
+    screenshot.tempPath = targetPath;
+  } catch (fsError) {
+    console.warn(`Could not persist screenshot ${screenshot.filename}:`, fsError);
+  }
+};
+
 export async function POST(request: Request) {
   if (!process.env.OPENAI_API_KEY) {
     return NextResponse.json(
@@ -99,20 +157,40 @@ export async function POST(request: Request) {
     );
   }
 
-  const formData = await request.formData();
-  const first = formData.get("imageA");
-  const second = formData.get("imageB");
-
-  if (!isFile(first) || !isFile(second) || first.size === 0 || second.size === 0) {
+  let json: unknown;
+  try {
+    json = await request.json();
+  } catch {
     return NextResponse.json(
-      { error: "Both imageA and imageB files are required." },
+      { error: "Request body must be valid JSON." },
       { status: 400 },
     );
   }
 
-  try {
-    const [firstImage, secondImage] = await Promise.all([fileToDataUri(first), fileToDataUri(second)]);
+  const screenshots = (json as { screenshots?: ScreenshotPayload[] }).screenshots;
 
+  if (!Array.isArray(screenshots) || screenshots.length < 2) {
+    return NextResponse.json(
+      { error: "Request body must include a screenshots array with at least two items." },
+      { status: 400 },
+    );
+  }
+
+  let parsedScreenshots: ParsedScreenshot[];
+  try {
+    parsedScreenshots = screenshots.slice(0, 2).map(parseScreenshot);
+  } catch (parseError) {
+    return NextResponse.json(
+      { error: parseError instanceof Error ? parseError.message : "Invalid screenshot data." },
+      { status: 400 },
+    );
+  }
+
+  await Promise.all(parsedScreenshots.map(persistScreenshot));
+
+  const [firstImage, secondImage] = parsedScreenshots;
+
+  try {
     const systemPrompt =
       "You are an assistant that compares two input images and produces a single output image that highlights every meaningful visual difference. " +
       "Overlay annotations, arrows, or color highlights so the resulting image clearly communicates how the two inputs differ. " +

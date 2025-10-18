@@ -39,8 +39,22 @@ npm run dev
 
 ## API の使い方
 - エンドポイント: `POST /api/diff`
-- リクエスト形式: `multipart/form-data`
-  - フィールド名 `imageA`, `imageB` に画像ファイルを添付します。
+- リクエスト形式: `application/json`
+  - `screenshots` 配列に、Data URI 形式の Base64 画像を格納します。
+  ```jsonc
+  {
+    "screenshots": [
+      {
+        "filename": "screenshot_2025-10-18_13-00-05.png",
+        "data": "data:image/png;base64,iVBORw0KGgoAAA..."
+      },
+      {
+        "filename": "screenshot_2025-10-18_13-00-10.png",
+        "data": "data:image/png;base64,iVBORw0KGgoAAA..."
+      }
+    ]
+  }
+  ```
 - レスポンス例:
   ```jsonc
   {
@@ -57,8 +71,7 @@ npm run dev
 
 ## テスト・検証
 - コードスタイルチェック: `npm run lint`
-- 手動テスト: 開発サーバーを起動し、ブラウザから 2 枚の画像をアップロードして動作を確認してください。
-- スクリプトなどで API を検証する場合は、`multipart/form-data` で画像を送信するツール（`curl`, `Postman`, 任意の Node.js スクリプトなど）を利用してください。
+- スクリプトなどで API を検証する場合は、上記 JSON 形式で `POST` できるツール（`curl`, `Postman`, 任意の Node.js スクリプトなど）を利用してください。
 
 ## デプロイ時の注意
 - Vercel 等のホスティングサービスにデプロイする場合は、環境変数に `OPENAI_API_KEY` および任意の設定値を忘れずに追加してください。
