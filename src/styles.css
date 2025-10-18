@@ -6,23 +6,23 @@
 }
 
 :root {
-  --background: oklch(0.12 0 0);
-  --foreground: oklch(0.95 0 0);
-  --card: oklch(0.16 0 0);
-  --card-foreground: oklch(0.95 0 0);
-  --primary: oklch(0.55 0.2 264);
-  --primary-foreground: oklch(0.98 0 0);
-  --secondary: oklch(0.22 0 0);
-  --secondary-foreground: oklch(0.95 0 0);
-  --muted: oklch(0.2 0 0);
-  --muted-foreground: oklch(0.6 0 0);
-  --accent: oklch(0.6 0.18 280);
-  --accent-foreground: oklch(0.98 0 0);
-  --destructive: oklch(0.5 0.22 25);
-  --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(0.24 0 0);
-  --success: oklch(0.6 0.15 160);
-  --info: oklch(0.65 0.15 240);
+  --background: #eeeeee;
+  --foreground: #333333;
+  --card: #ffffff;
+  --card-foreground: #333333;
+  --primary: #007bff;
+  --primary-foreground: #ffffff;
+  --secondary: #6c757d;
+  --secondary-foreground: #ffffff;
+  --muted: #6c757d;
+  --muted-foreground: #333333;
+  --accent: #6c757d;
+  --accent-foreground: #ffffff;
+  --destructive: #dc3545;
+  --destructive-foreground: #ffffff;
+  --border: #dee2e6;
+  --success: #28a745;
+  --info: #17a2b8;
   --radius: 8px;
 }
 
@@ -94,13 +94,15 @@ body {
 
 .grid {
   display: grid;
-  grid-template-columns: 1fr;
+  /* デフォルトを2列レイアウトにする */
+  grid-template-columns: 2fr 1fr;
   gap: 1.5rem;
 }
 
-@media (min-width: 1024px) {
+/* 画面幅が1000px "以下" になった場合に1列にする */
+@media (max-width: 1000px) {
   .grid {
-    grid-template-columns: 2fr 1fr;
+    grid-template-columns: 1fr;
   }
 }
 
@@ -108,7 +110,7 @@ body {
 .col-right {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.50rem;
 }
 
 /* Card */
@@ -117,6 +119,22 @@ body {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   overflow: hidden;
+  display: flex; /* 子要素である .yoko を横並びにする */
+  gap: 1.5rem;   /* 横並びになった要素の間に余白を追加 */
+}
+
+.yoko {
+  flex: 1; /* 利用可能なスペースを均等に分け合う (50%ずつの幅になる) */
+  display: flex;
+  flex-direction: column; /* yokoの中身は縦に並べる */
+}
+
+.yoko-left {
+  flex: 7.5; /* 全体の4割の幅を取る */
+}
+
+.yoko-right {
+  flex: 2.5; /* 全体の6割の幅を取る */
 }
 
 .card-header {
