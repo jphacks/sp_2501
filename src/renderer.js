@@ -23,5 +23,19 @@ document.addEventListener('DOMContentLoaded', () => {
       recording = true;
     }
   });
+  
+  const toggle = document.getElementById('myToggle');
+
+  toggle.addEventListener('change', function() {
+            if (this.checked) {
+                console.log('スイッチがオンになりました');
+                // ここにオンになった時の処理を書く
+            } else {
+                console.log('スイッチがオフになりました');
+                // ここにオフになった時の処理を書く
+            }
+  });
 
 });
+
+
