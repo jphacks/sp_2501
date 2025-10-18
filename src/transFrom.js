@@ -1,4 +1,8 @@
-/* transForm.js - Report generator (PDF JP font + solid fallback) */
+/* transForm.js - Report generator (PDF JP font + robust fallback)
+   - Markdownの改行を厳密保持
+   - 画像は要約（Markdown）と同じセクション内に連続配置
+   - TXT/MD 出力では画像を完全に出力しない
+*/
 (() => {
   'use strict';
 
@@ -68,55 +72,60 @@
       });
       if(!r.ok) throw new Error('HTTP '+r.status);
       const j = await r.json(); if(j && typeof j.summary==='string') return j.summary;
-    }catch{/*noop*/}
+    }catch{/* noop */}
     if(!items.length) return '画像がないため、要約は省略されました。';
     return `スクリーンショット ${items.length} 件を収集しました。代表例: ${items.slice(0,3).map((_,i)=>`#${i+1}`).join(', ')} ...`;
   }
 
-  // ---------- builders (MD/TXT/HTML) ----------
-  function buildMarkdown({title,includeImages,includeTimestamps,includeSummary,summary,items}){
-    const L=[]; L.push(`# ${title}`,'',`生成時刻: ${new Date().toLocaleString()}`,`画像数: ${items.length}`,'');
-    if(includeSummary){ L.push('## 要約','', summary || '（要約なし）',''); }
-    if(includeImages && items.length){
-      L.push('## スクリーンショット','');
-      items.forEach((img,i)=>{ const cap=includeTimestamps&&img.timestamp?`（${img.timestamp}）`:''; L.push(`### 画像 ${i+1} ${cap}`,`![${img.alt}]( ${img.dataURL} )`, ''); });
-    }
+  // ---------- builders ----------
+  // NOTE: TXT / MD は画像を出力しない仕様に変更
+  function buildMarkdown({title, includeSummary, summary}){
+    const L=[]; 
+    L.push(`# ${title}`,'', `生成時刻: ${new Date().toLocaleString()}`, '');
+    if(includeSummary){ L.push('## 要約','', summary || '（要約なし）'); }
     return L.join('\n');
   }
-  function buildPlainText({title,includeImages,includeTimestamps,includeSummary,summary,items}){
-    const L=[]; L.push(`${title}`,`生成時刻: ${new Date().toLocaleString()}`,`画像数: ${items.length}`,'');
-    if(includeSummary){ L.push('【要約】', summary || '（要約なし）',''); }
-    if(includeImages && items.length){
-      L.push('【スクリーンショット】');
-      items.forEach((img,i)=>{ const cap=includeTimestamps&&img.timestamp?`（${img.timestamp}）`:''; L.push(`-- 画像 ${i+1} ${cap}`, img.dataURL, ''); });
-    }
+  function buildPlainText({title, includeSummary, summary}){
+    const L=[]; 
+    L.push(`${title}`, `生成時刻: ${new Date().toLocaleString()}`, '');
+    if(includeSummary){ L.push('【要約】', summary || '（要約なし）'); }
     return L.join('\n');
   }
-  function buildHTML({title,includeImages,includeTimestamps,includeSummary,summary,items}){
+
+  function buildHTML({title, includeImages, includeTimestamps, includeSummary, summary, items}){
     const esc=(s)=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-    const imgs = includeImages ? items.map((img,i)=> {
-      const cap = includeTimestamps&&img.timestamp?`（${esc(img.timestamp)}）`:'';
-      return `<h3>画像 ${i+1} ${cap}</h3><img src="${img.dataURL}" alt="${esc(img.alt)}" style="max-width:100%;height:auto;display:block;margin:8px 0;" />`;
-    }).join('\n') : '';
-    const sum = includeSummary ? `<h2>要約</h2><p>${esc(summary||'（要約なし）')}</p>` : '';
+    // 改行保持は pre-wrap を使用（改行も長文折返しも維持）: MDN
+    // https://developer.mozilla.org/en-US/docs/Web/CSS/white-space
+    const summaryHTML = includeSummary
+      ? `<h2>要約</h2>
+         <pre class="summary-text">${esc(summary || '（要約なし）')}</pre>`
+      : '';
+    const imagesHTML = includeImages && items.length
+      ? items.map((img,i)=>{
+          const cap = includeTimestamps && img.timestamp ? `（${esc(img.timestamp)}）` : '';
+          return `<figure style="margin:12px 0;">
+                    <img src="${img.dataURL}" alt="${esc(img.alt)}" style="max-width:100%;height:auto;display:block;" />
+                    <figcaption style="color:#666;font-size:.9rem;">画像 ${i+1} ${cap}</figcaption>
+                  </figure>`;
+        }).join('\n') : '';
+
     return `<!doctype html>
 <html lang="ja"><meta charset="utf-8"><title>${esc(title)}</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
-  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;line-height:1.6;margin:24px;}
-  h1{font-size:1.6rem;margin:0 0 12px;} h2{font-size:1.2rem;margin:20px 0 8px;} .meta{color:#666;margin-bottom:12px;}
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Noto Sans JP","Yu Gothic","Meiryo",sans-serif;line-height:1.6;margin:24px;}
+  h1{font-size:1.6rem;margin:0 0 12px;} h2{font-size:1.2rem;margin:20px 0 8px;}
+  .meta{color:#666;margin-bottom:12px;}
+  .summary-text{white-space:pre-wrap; font-family:inherit;}
 </style>
 <h1>${esc(title)}</h1>
-<div class="meta">生成時刻: ${esc(new Date().toLocaleString())} / 画像数: ${items.length}</div>
-${sum}
-${includeImages?'<h2>スクリーンショット</h2>':''}
-${imgs}
+<div class="meta">生成時刻: ${esc(new Date().toLocaleString())}</div>
+${summaryHTML}
+${imagesHTML}
 </html>`;
   }
 
   // ---------- PDF（日本語フォント埋め込み + 確実なフォールバック） ----------
-
-  // UTF-8 用の日本語TTF（IPAexGothic）をCORS可のミラーから取得 → jsPDFへ埋め込み
   const JP_FONT_URLS = [
     'https://ctan.math.washington.edu/tex-archive/fonts/ipaex/ipaexg.ttf',
     'https://mirror.twds.com.tw/CTAN/fonts/ipaex/ipaexg.ttf'
@@ -135,31 +144,44 @@ ${imgs}
   async function attachJPFont(doc){
     try{
       const b64 = await fetchJPFontB64(); if(!b64) return false;
-      doc.addFileToVFS('IPAexGothic.ttf', b64);              // VFSに登録
-      doc.addFont('IPAexGothic.ttf', 'IPAexGothic', 'normal'); // 名称紐付け
-      doc.setFont('IPAexGothic', 'normal');                   // 使用指定
+      doc.addFileToVFS('IPAexGothic.ttf', b64);
+      doc.addFont('IPAexGothic.ttf', 'IPAexGothic', 'normal');
+      doc.setFont('IPAexGothic', 'normal');
       return true;
     }catch{ return false; }
   }
 
-  // HTML断片を作成（フォールバック用：画像化して貼る）
+  // 要約の改行を保持しつつ折返す描画
+  // 各行ごとに splitTextToSize を適用して複数行化（公式API）:
+  // https://artskydj.github.io/jsPDF/docs/module-split_text_to_size.html
+  function renderPDFMultilineText(doc, text, x, y, maxWidth, lineH){
+    const lines = String(text || '').split(/\r?\n/);
+    for (let i=0;i<lines.length;i++){
+      const raw = lines[i];
+      if (raw === '') { y += lineH; continue; } // 空行
+      const wrapped = doc.splitTextToSize(raw, maxWidth); // 折返し配列
+      for (const seg of wrapped){ doc.text(seg, x, y); y += lineH; }
+    }
+    return y;
+  }
+
   function buildHTMLFragmentForPDF({ title, includeImages, includeTimestamps, includeSummary, summary, items }) {
     const esc = (s)=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
     const parts=[];
     parts.push(`<div style="font-family: system-ui, -apple-system, 'Noto Sans JP','Yu Gothic','Meiryo',sans-serif; line-height:1.6; padding:0; margin:0;">`);
     parts.push(`<h1 style="font-size:20px;margin:0 0 12px;">${esc(title)}</h1>`);
-    parts.push(`<div style="color:#444;margin-bottom:8px;">生成時刻: ${esc(new Date().toLocaleString())} / 画像数: ${items.length}</div>`);
+    parts.push(`<div style="color:#444;margin-bottom:8px;">生成時刻: ${esc(new Date().toLocaleString())}</div>`);
     if (includeSummary){
       parts.push(`<h2 style="font-size:16px;margin:16px 0 6px;">要約</h2>`);
-      parts.push(`<div>${esc(summary||'（要約なし）')}</div>`);
+      // 改行保持（pre-wrap）
+      parts.push(`<pre style="white-space:pre-wrap; font-family:inherit; margin:0;">${esc(summary||'（要約なし）')}</pre>`);
     }
     if (includeImages && items.length){
-      parts.push(`<h2 style="font-size:16px;margin:16px 0 6px;">スクリーンショット</h2>`);
-      items.forEach((img,i)=>{
-        const cap=includeTimestamps&&img.timestamp?`（${esc(img.timestamp)}）`:'';
-        parts.push(`<h3 style="font-size:14px;margin:12px 0 6px;">画像 ${i+1} ${cap}</h3>`);
-        parts.push(`<img src="${img.dataURL}" alt="${esc(img.alt)}" style="max-width:100%;height:auto;display:block;margin:6px 0;" />`);
-      });
+      for (let i=0;i<items.length;i++){
+        const img = items[i];
+        const cap = includeTimestamps && img.timestamp ? `（${esc(img.timestamp)}）` : '';
+        parts.push(`<figure style="margin:12px 0;"><img src="${img.dataURL}" alt="${esc(img.alt)}" style="max-width:100%;height:auto;display:block;" /><figcaption style="color:#666;font-size:.9rem;">画像 ${i+1} ${cap}</figcaption></figure>`);
+      }
     }
     parts.push(`</div>`);
     return parts.join('');
@@ -168,86 +190,93 @@ ${imgs}
   async function buildDOCX({ title, includeImages, includeTimestamps, includeSummary, summary, items }) {
     await loadScript('https://cdn.jsdelivr.net/npm/docx@9.5.1/dist/index.iife.js');
     const { Document, Packer, Paragraph, HeadingLevel, AlignmentType, ImageRun } = window.docx;
+
     const children = [
       new Paragraph({ text: title, heading: HeadingLevel.HEADING_1 }),
-      new Paragraph({ text: `生成時刻: ${new Date().toLocaleString()} / 画像数: ${items.length}` }),
+      new Paragraph({ text: `生成時刻: ${new Date().toLocaleString()}` }),
     ];
-    if(includeSummary){ children.push(new Paragraph({ text:'要約', heading:HeadingLevel.HEADING_2 })); children.push(new Paragraph({ text: summary||'（要約なし）' })); }
+    if(includeSummary){
+      children.push(new Paragraph({ text:'要約', heading:HeadingLevel.HEADING_2 }));
+      // 改行保持：\n で段落化
+      String(summary || '（要約なし）').split(/\r?\n/).forEach(line=>{
+        children.push(new Paragraph({ text: line }));
+      });
+    }
     if(includeImages && items.length){
-      children.push(new Paragraph({ text:'スクリーンショット', heading:HeadingLevel.HEADING_2 }));
       for(let i=0;i<items.length;i++){
-        const img=items[i]; const cap=includeTimestamps&&img.timestamp?`画像 ${i+1} （${img.timestamp}）`:`画像 ${i+1}`;
-        children.push(new Paragraph({ text: cap, heading: HeadingLevel.HEADING_3 }));
+        const img=items[i];
+        const caption = includeTimestamps && img.timestamp ? `画像 ${i+1} （${img.timestamp}）` : `画像 ${i+1}`;
+        children.push(new Paragraph({ text: caption, heading: HeadingLevel.HEADING_3 }));
         const bytes = dataURLtoUint8(img.dataURL);
         const maxW=500; const ratio=img.width?Math.min(1,maxW/img.width):1;
         const w=Math.round((img.width||maxW)*ratio), h=Math.round((img.height||maxW)*ratio);
-        children.push(new Paragraph({ alignment: AlignmentType.LEFT, children:[ new ImageRun({ data: bytes, transformation:{ width:w, height:h } }) ] }));
+        children.push(new Paragraph({
+          alignment: AlignmentType.LEFT,
+          children:[ new ImageRun({ data: bytes, transformation:{ width:w, height:h } }) ]
+        }));
       }
     }
     const doc = new Document({ sections:[{ children }] });
     return await Packer.toBlob(doc);
   }
 
-  // ---- ここが修正ポイント：白紙を確実に回避するPDF生成 ----
   async function buildPDF(pack) {
-    // jsPDF本体
     await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/3.0.3/jspdf.umd.min.js');
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit:'pt', format:'a4', compress:true });
     const page = { w: doc.internal.pageSize.getWidth(), h: doc.internal.pageSize.getHeight(), margin: 40 };
+    const maxW = page.w - page.margin*2;
+    const lineH = 14;
 
-    // 1) まずはベクトル文字（日本語フォント埋め込み）で描画
-    const fontOK = await attachJPFont(doc); // UTF-8にはカスタムTTFが必要。:contentReference[oaicite:2]{index=2}
+    // 日本語フォント（UTF-8文字を描画するにはカスタムTTFの組込みが必要）
+    const fontOK = await attachJPFont(doc);
+
     if (fontOK) {
       doc.setFontSize(16); doc.text(pack.title, page.margin, page.margin);
-      doc.setFontSize(11); doc.text(`生成時刻: ${new Date().toLocaleString()} / 画像数: ${pack.items.length}`, page.margin, page.margin+18);
+      doc.setFontSize(11); doc.text(`生成時刻: ${new Date().toLocaleString()}`, page.margin, page.margin+18);
 
       let y = page.margin + 40;
+
+      // 要約（改行保持 + 折返し）
       if (pack.includeSummary) {
-        doc.setFontSize(12); doc.text('要約', page.margin, y); y += 16;
+        doc.setFontSize(12); doc.text('要約', page.margin, y); y += 18;
         doc.setFontSize(11);
-        const split = doc.splitTextToSize(pack.summary || '（要約なし）', page.w - page.margin*2);
-        doc.text(split, page.margin, y); y += split.length*14 + 10;
+        y = renderPDFMultilineText(doc, pack.summary || '（要約なし）', page.margin, y, maxW, lineH);
+        y += 6;
       }
+
+      // 画像を同じセクション内に続けて配置
       if (pack.includeImages && pack.items.length) {
-        doc.setFontSize(12); doc.text('スクリーンショット', page.margin, y); y += 18;
         for (let i=0;i<pack.items.length;i++){
           const img=pack.items[i];
-          const cap = pack.includeTimestamps && img.timestamp ? `画像 ${i+1} （${img.timestamp}）` : `画像 ${i+1}`;
-          doc.setFontSize(11); doc.text(cap, page.margin, y); y += 14;
-          const maxW = page.w - page.margin*2;
-          const imgH = (maxW * (img.height || 9)) / (img.width || 16);
-          if (y + imgH + 20 > page.h - page.margin) { doc.addPage(); y = page.margin; }
+          const caption = pack.includeTimestamps && img.timestamp ? `画像 ${i+1} （${img.timestamp}）` : `画像 ${i+1}`;
+          const imgW = maxW;
+          const imgH = img.width ? (imgW * img.height / img.width) : (imgW * 9 / 16);
+          if (y + imgH + 28 > page.h - page.margin) { doc.addPage(); y = page.margin; }
+          doc.setFontSize(11); doc.text(caption, page.margin, y); y += 14;
           const mime = (img.dataURL.split(';')[0].split(':')[1] || '').toUpperCase().includes('JPEG') ? 'JPEG' : 'PNG';
-          doc.addImage(img.dataURL, mime, page.margin, y, maxW, imgH, undefined, 'FAST');
-          y += imgH + 18;
-          if (i < pack.items.length-1 && y > page.h - page.margin - 60) { doc.addPage(); y = page.margin; }
+          doc.addImage(img.dataURL, mime, page.margin, y, imgW, imgH, undefined, 'FAST');
+          y += imgH + 14;
         }
       }
       return doc.output('blob');
     }
 
-    // 2) フォント取得失敗時のフォールバック：
-    //    html2canvasで画像化して“確実に”出力（doc.htmlは使わない＝白紙回避）:contentReference[oaicite:3]{index=3}
+    // フォント取得失敗時：html2canvas で画像化（白紙回避）
     await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
-
-    // A4のpt→px 換算（96dpi想定）
+    const frag = buildHTMLFragmentForPDF(pack);
     const pxPerPt = 96/72;
     const work = document.createElement('div');
-    work.style.position = 'fixed';
-    work.style.left = '-10000px';
-    work.style.top = '0';
-    work.style.background = '#ffffff';
-    work.style.width = Math.round((page.w - page.margin*2) * pxPerPt) + 'px';
-    work.innerHTML = buildHTMLFragmentForPDF(pack);
-    document.body.appendChild(work);
+    work.style.position = 'fixed'; work.style.left = '-10000px'; work.style.top = '0';
+    work.style.background = '#fff';
+    work.style.width = Math.round((maxW) * pxPerPt) + 'px';
+    work.innerHTML = frag; document.body.appendChild(work);
 
     const canvas = await window.html2canvas(work, { backgroundColor:'#ffffff', scale: 2, useCORS: true });
     work.remove();
 
-    // 1枚の巨大画像を、位置シフト手法でマルチページ化（定番レシピ）:contentReference[oaicite:4]{index=4}
     const imgData = canvas.toDataURL('image/png');
-    const imgWpt = page.w - page.margin*2;
+    const imgWpt = maxW;
     const imgHpt = imgWpt * (canvas.height / canvas.width);
 
     let heightLeft = imgHpt;
