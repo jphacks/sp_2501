@@ -145,7 +145,7 @@ body {
   display: flex; /* 子要素である .yoko を横並びにする */
   gap: 1.5rem;   /* 横並びになった要素の間に余白を追加 */
   transition: all 0.3s;
-  height: 700px;
+  height: 710px;
 }
 
 .yoko {
@@ -320,6 +320,8 @@ body {
   grid-template-columns: repeat(3, 1fr);
   gap: 1rem;
   margin-top: 1.5rem;
+  padding-bottom: 20px;
+  border-bottom: var(--card-foreground) 1px solid;
 }
 
 .stat-card {
@@ -716,7 +718,7 @@ body {
     overflow: auto;
     scrollbar-width: none;
     -ms-overflow-style: none;
-    border-top: var(--card-foreground) 1px solid;
+    
     /* ★★★ ここからが変更点 ★★★ */
 
     /* グラデーションを「マスク」として指定します */
