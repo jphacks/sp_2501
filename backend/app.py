@@ -21,7 +21,10 @@ def capture_loop(settings):
 
     try:
         # 設定値抽出
-        save_path = settings.get('savePath', 'screenshots') # 保存先
+            # 保存先パスを固定: プロジェクトルートの screenshot フォルダ (root/screenshot)
+        repo_root = os.path.dirname(os.path.dirname(__file__))
+        save_path = os.path.join(repo_root, 'screenshot')
+        # settings に savePath が含まれていても無視する
         interval = float(settings.get('interval', 5.0))     # 撮影間隔 (秒)
         resolution_scale = float(settings.get('resolution', 1.0)) # 解像度スケール
 
@@ -94,6 +97,17 @@ def start_recording():
         settings = request.get_json()
         print(f"バックエンド受信: 録画開始リクエスト。設定: {settings}")
 
+            # 保存先パスを固定 (プロジェクトルートの screenshot フォルダ) — 開始前にフォルダが存在するか確認し
+            # 存在しない場合は作成を試みます。作成に失敗した場合はエラーを返します。
+        try:
+            repo_root = os.path.dirname(os.path.dirname(__file__))
+            save_path = os.path.join(repo_root, 'screenshot')
+            os.makedirs(save_path, exist_ok=True)
+            print(f"保存先フォルダ準備完了: {save_path}")
+        except Exception as e:
+            print(f"保存先フォルダの作成に失敗しました: {e}")
+            return jsonify({"status": "error", "message": f"保存先フォルダの作成に失敗しました: {e}"}), 500
+
         # スレッド開始
         is_running = True
         screenshot_thread = threading.Thread(target=capture_loop, args=(settings,))
@@ -121,4 +135,7 @@ def stop_recording():
     return jsonify({"status": "success", "message": "スクリーンショットの保存を停止しました。"})
 
 if __name__ == '__main__':
-    app.run(port=5001, debug=True)
+    # Disable debug reloader when run as subprocess to avoid it spawning a
+    # child process that may send signals (SIGINT) causing sibling process
+    # (Electron) to exit.
+    app.run(port=5001, debug=False, use_reloader=False)

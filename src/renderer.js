@@ -1,5 +1,4 @@
 // HTMLの各要素(Element)をIDで取得します。
-const savePathInput = document.getElementById('savePath');
 const intervalInput = document.getElementById('interval');
 const resolutionSelect = document.getElementById('resolution');
 const startButton = document.getElementById('btn-start');
@@ -9,7 +8,6 @@ const statusText = document.getElementById('status-text'); // ステータス表
 // 「開始」ボタンがクリックされた時の処理
 startButton.addEventListener('click', async () => {
   const settings = {
-    savePath: savePathInput.value,
     interval: intervalInput.value,
     resolution: resolutionSelect.value,
   };
