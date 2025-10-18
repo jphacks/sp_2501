@@ -14,7 +14,7 @@ SCREENSHOT_DIR = os.path.join(REPO_ROOT, 'screenshot')
 
 # ★★★ 送信するVercel APIのURLを入力してください。 ★★★
 request_URL = "" # 例: 'myapp.vercel.app'
-VERCEL_API_URL = f'https://{request_URL}/api/upload'
+VERCEL_API_URL = f'https://{request_URL}/api/diff'
 
 UPLOAD_INTERVAL_SECONDS = 10 # 10秒ごとにフォルダを確認
 BATCH_SIZE = 2               # 2つずつまとめて送信
