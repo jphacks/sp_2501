@@ -145,7 +145,7 @@ body {
   display: flex; /* 子要素である .yoko を横並びにする */
   gap: 1.5rem;   /* 横並びになった要素の間に余白を追加 */
   transition: all 0.3s;
-  height: 630px;
+  height: 700px;
 }
 
 .yoko {
@@ -240,6 +240,13 @@ body {
   height: 16px;
 }
 
+#btn-stop{
+  background-color: #dc3545;
+}
+
+#capture_seigyo{
+  color: #dc3545;
+}
 /* Form Elements */
 .form-group {
   margin-bottom: 1rem;
@@ -697,7 +704,7 @@ body {
     transition: all 0.3s;
     display: block;
     width: 100%;
-    height: 100px;
+    height: 200px;
     padding: 4px; 
     color: var(--card-foreground); /* 文字色 */
     background-color: var(--card); /* 背景色 */
@@ -709,18 +716,18 @@ body {
     overflow: auto;
     scrollbar-width: none;
     -ms-overflow-style: none;
-
+    border-top: var(--card-foreground) 1px solid;
     /* ★★★ ここからが変更点 ★★★ */
 
     /* グラデーションを「マスク」として指定します */
     -webkit-mask-image: linear-gradient(
         to bottom,
-        black 50%,      /* 上半分: 表示させる (黒) */
+        black 80%,      /* 上半分: 表示させる (黒) */
         transparent 100% /* 下半分: 非表示にする (透明) */
     );
     mask-image: linear-gradient(
         to bottom,
-        black 50%,      /* 上半分: 表示させる (黒) */
+        black 80%,      /* 上半分: 表示させる (黒) */
         transparent 100% /* 下半分: 非表示にする (透明) */
     );
 }

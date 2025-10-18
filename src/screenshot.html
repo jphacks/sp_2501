@@ -41,15 +41,11 @@
           <section class="card">
             <div class="yoko yoko-left">
               <div class="card-header">
-                <h2 class="card-title">キャプチャ制御</h2>
+                <h2 class="card-title">キャプチャ制御</h2><h2 class="card-title" id="capture_seigyo"></h2>
               </div>
               <div class="card-content">
                 <div class="control-section">
-                  <div class="control-row">
-                    <button class="btn btn-primary btn-large" id="btn-start">
-                      録画開始
-                    </button>
-                  </div>
+
 
                   <div class="form-group">
                     <label for="intervalInput">撮影間隔（分）</label>
@@ -68,7 +64,13 @@
                       <button class="btn btn-secondary" id="browseFolderBtn">参照</button>
                     </div>
                   </div>
-
+                  <div class="control-row">
+                    <button class="btn btn-primary btn-large" id="btn-start">
+                      録画開始
+                    </button>
+                    <button class="btn btn-primary btn-large" id="btn-stop">録画停止
+                    </button>
+                  </div>
                   <div class="stats-grid">
                     <div class="stat-card">
                       <div class="stat-label">合計撮影枚数</div>

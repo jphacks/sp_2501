@@ -5,25 +5,44 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 「開始」ボタンの要素(Element)をIDで取得します。
   const startButton = document.getElementById('btn-start');
+  const stopButton = document.getElementById('btn-stop');
+  const captureText = document.getElementById('capture_seigyo');
   startButton.addEventListener('click', async () => {
 
     if (recording) {
-      startButton.innerText = `録画開始`;
+      startButton.innerText = `録画再開`;
       startButton.style.transition = `all 0.3s`;
       startButton.style.backgroundColor = `#3b82f6`; // 青色に戻す
-      startButton.style.rotate = `0deg`;
-      startButton.style.scale = `1.0`;
+      startButton.style.color = `#ffffff`;
+      captureText.innerText = ``;
+
       recording = false;
+
     } else {
       startButton.innerText = `録画停止`;
       startButton.style.transition = `all 0.3s`;
-      startButton.style.backgroundColor = `#ef4444`; // 赤色に変更
-      startButton.style.rotate = `360deg`;
-      startButton.style.scale = `1.4`;
+      startButton.style.backgroundColor = `#44aa44`; // 赤色に変更
+      startButton.style.color = `#ffffff`;
+
+      captureText.innerText = `録画中`;
+      
+
       recording = true;
     }
+
   });
   
+  stopButton.addEventListener('click', async () => {
+      startButton.innerText = `録画開始`;
+      startButton.style.transition = `all 0.3s`;
+      startButton.style.backgroundColor = `#eeeeee`;
+      startButton.style.color = `#333333`;
+      captureText.innerText = ``;
+
+      recording = false;
+
+  });
+
   const toggle = document.getElementById('myToggle');
   const htmlElement = document.documentElement; // <html>要素
 
