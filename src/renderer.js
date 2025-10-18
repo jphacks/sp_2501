@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
       recording = false;
 
     } else {
-      startButton.innerText = `録画停止`;
+      startButton.innerText = `一時停止`;
       startButton.style.transition = `all 0.3s`;
       startButton.style.backgroundColor = `#44aa44`; // 赤色に変更
       startButton.style.color = `#ffffff`;
