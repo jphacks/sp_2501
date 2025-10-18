@@ -36,17 +36,24 @@ function createWindow() {
     width: 1200,
     height: 900,
     webPreferences: {
-      // preload.js is located in the same folder as this main.js (src/),
-      // so don't include an extra 'src/' segment which caused 'src/src/preload.js'.
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
     },
   });
 
-  // index.html is also next to main.js inside src/
-  mainWindow.loadFile(path.join(__dirname, 'screenshot.html'));
-  mainWindow.webContents.openDevTools();
+  const isDev = process.env.NODE_ENV !== 'production'
+
+  if (isDev) {
+    // Load Next.js dev server so NextAuth runs on http://localhost:3000 and cookies are set correctly
+    const devUrl = process.env.ELECTRON_START_URL || 'http://localhost:3000'
+    mainWindow.loadURL(devUrl)
+    mainWindow.webContents.openDevTools()
+  } else {
+    // In production, fall back to the local static html (or exported Next output)
+    // If you export Next to `out/`, you can load out/index.html here instead.
+    mainWindow.loadFile(path.join(__dirname, 'screenshot.html'))
+  }
 }
 
 // Electronアプリの準備が完了したら実行

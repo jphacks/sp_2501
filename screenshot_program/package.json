@@ -1,10 +1,36 @@
 {
+  "name": "screenshot-program",
+  "version": "0.1.0",
+  "private": true,
   "main": "src/main.js",
   "scripts": {
-    "start": "electron ."
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "electron": "electron .",
+    "dev:electron": "concurrently \"npm run dev\" \"wait-on http://localhost:3000 && electron .\"",
+    "package:electron": "next build && next export -o out && electron-builder"
   },
   "dependencies": {
     "axios": "^1.12.2",
-    "electron": "^38.3.0"
+    "electron": "^38.3.0",
+    "next": "14.2.33",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "next-auth": "^4.24.11"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0",
+    "wait-on": "^7.0.1",
+    "electron-builder": "^24.6.0"
+  },
+  "build": {
+    "appId": "com.example.screenshot-program",
+    "files": [
+      "out/**",
+      "node_modules/**",
+      "src/**",
+      "package.json"
+    ]
   }
 }
