@@ -1,13 +1,23 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSession, signIn, signOut } from 'next-auth/react'
 import Image from 'next/image'
 
-// preload에서 노출된 API가 있을 수 있으므로 타입 선언(컴파일 오류 방지)
+// 개인 설정 타입 및 preload에서 노출된 API 타입 선언
+type PersonalSettings = {
+  interval: number
+  resolution: number | string
+  statusText: string
+  isRecording: boolean
+}
+
 declare global {
   interface Window {
     api?: {
       startRecording: (settings: { interval: number; resolution: number }) => Promise<{ status?: string }>
       stopRecording: () => Promise<{ status?: string }>
+      readSettings: () => Promise<PersonalSettings>
+      writeSettings: (obj: Partial<PersonalSettings>) => Promise<{ ok: boolean; error?: string }>
+      onSettingsChanged: (cb: (data: any) => void) => () => void
     }
   }
 }
@@ -19,14 +29,9 @@ export default function Home() {
   const [resolution, setResolution] = useState<string>('1.0')
   const [statusText, setStatusText] = useState<string>('待機中...')
   const [isRecording, setIsRecording] = useState<boolean>(false)
+  const [loadedSettings, setLoadedSettings] = useState<boolean>(false)
 
-  if (status === 'loading') {
-    return (
-      <main>
-        <p>セッション情報を読み込み中です...</p>
-      </main>
-    )
-  }
+  // NOTE: do not return early here; hooks below must run on every render
 
   const handleStart = async () => {
     setStatusText('開始処理中...')
@@ -62,6 +67,98 @@ export default function Home() {
     } catch (err: any) {
       setStatusText('停止エラー: ' + (err?.message ?? String(err)))
     }
+  }
+
+  // settings를 로드 (preload가 제공되면) — 마운트 시 1회
+  useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      try {
+        if (typeof window !== 'undefined' && window.api?.readSettings) {
+          const s = await window.api.readSettings()
+          if (!mounted) return
+          if (s) {
+            if (typeof s.interval === 'number') setIntervalSec(s.interval)
+            if (typeof s.resolution === 'number' || typeof s.resolution === 'string') setResolution(String(s.resolution))
+            if (typeof s.statusText === 'string') setStatusText(s.statusText)
+            if (typeof s.isRecording === 'boolean') setIsRecording(s.isRecording)
+          }
+        }
+      } catch (err) {
+        console.error('readSettings error', err)
+      } finally {
+        if (mounted) setLoadedSettings(true)
+      }
+    })()
+    return () => {
+      mounted = false
+    }
+  }, [])
+
+  // 변경사항 자동 저장 (디바운스). loadedSettings가 true일 때만 저장 시작
+  useEffect(() => {
+    if (!loadedSettings) return
+    let timer: NodeJS.Timeout | null = null
+    const scheduleSave = () => {
+      if (timer) clearTimeout(timer)
+      timer = setTimeout(async () => {
+        try {
+          if (typeof window !== 'undefined' && window.api?.writeSettings) {
+            await window.api.writeSettings({ interval: intervalSec, resolution: parseFloat(resolution), statusText, isRecording })
+          }
+        } catch (err) {
+          console.error('writeSettings error', err)
+        }
+      }, 500)
+    }
+
+    scheduleSave()
+
+    return () => {
+      if (timer) clearTimeout(timer!)
+    }
+  }, [intervalSec, resolution, statusText, isRecording, loadedSettings])
+
+  // 수동 저장 버튼 핸들러
+  const handleManualSave = async () => {
+    try {
+      if (typeof window !== 'undefined' && window.api?.writeSettings) {
+        const res = await window.api.writeSettings({ interval: intervalSec, resolution: parseFloat(resolution), statusText, isRecording })
+        if (res?.ok) setStatusText('設定を保存しました')
+        else setStatusText('保存失敗: ' + (res?.error ?? 'unknown'))
+      }
+    } catch (err) {
+      console.error('manual save error', err)
+      setStatusText('保存エラー')
+    }
+  }
+
+  // 파일 변경 감시: preload가 제공하는 콜백 등록
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.api?.onSettingsChanged) return
+    const off = window.api.onSettingsChanged(async () => {
+      try {
+        const s = await window.api.readSettings()
+        if (s) {
+          setIntervalSec(s.interval)
+          setResolution(String(s.resolution))
+          setStatusText(s.statusText)
+          setIsRecording(s.isRecording)
+        }
+      } catch (err) {
+        console.error('onSettingsChanged read error', err)
+      }
+    })
+    return () => off()
+  }, [loadedSettings])
+
+  // 로딩 상태는 hooks가 선언된 이후에 처리해야 함
+  if (status === 'loading') {
+    return (
+      <main>
+        <p>セッション情報を読み込み中です...</p>
+      </main>
+    )
   }
 
   if (session) {
