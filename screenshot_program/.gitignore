@@ -1,0 +1,7 @@
+screenshot/
+
+node_modules/
+
+.env
+
+backend/__pycache__/
