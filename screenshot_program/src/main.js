@@ -2,6 +2,8 @@ const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process'); // Pythonスクリプト実行に必要
 const axios = require('axios');             // HTTPリクエストに必要
+const fs = require('fs');
+const fsp = fs.promises;
 
 let pythonProcess = null; // Pythonの子プロセスを格納する変数
 let uploadProcess = null; // アップローダー用の子プロセス
@@ -9,8 +11,9 @@ let uploadProcess = null; // アップローダー用の子プロセス
 // Pythonサーバーを起動する関数
 function createPythonProcess() {
   // backend/app.py lives at repository root (../backend/app.py relative to src/)
-  pythonProcess = spawn('py', [path.join(__dirname, '..', 'backend', 'app.py')]);
-  uploadProcess = spawn('py', [path.join(__dirname, '..', 'backend', 'uploader.py')]);
+  // Use 'python' executable to be more portable on Windows/macOS
+  pythonProcess = spawn('python', [path.join(__dirname, '..', 'backend', 'app.py')]);
+  uploadProcess = spawn('python', [path.join(__dirname, '..', 'backend', 'uploader.py')]);
 
   // Pythonスクリプトの標準出力(print)をコンソールに出力
   pythonProcess.stdout.on('data', (data) => {
@@ -54,6 +57,18 @@ function createWindow() {
     // If you export Next to `out/`, you can load out/index.html here instead.
     mainWindow.loadFile(path.join(__dirname, 'screenshot.html'))
   }
+
+  // settings 파일 변경 감시 시작
+  const stopWatcher = startSettingsWatcher(mainWindow)
+
+  // 창이 닫힐 때 watcher 종료
+  mainWindow.on('closed', () => {
+    try {
+      stopWatcher()
+    } catch (err) {
+      // ignore
+    }
+  })
 }
 
 // Electronアプリの準備が完了したら実行
@@ -113,3 +128,97 @@ ipcMain.handle('recording:stop', async (event) => {
     return { status: 'error', message: 'バックエンドサーバーとの通信に失敗しました。' };
   }
 });
+
+// Helper: user settings path (in userData) and bundle default path (public)
+function getSettingsPaths() {
+  const userPath = path.join(app.getPath('userData'), 'personalSetting.json')
+  const bundlePath = path.join(__dirname, '..', 'public', 'personalSetting.json')
+  return { userPath, bundlePath }
+}
+
+// 기본 설정 (fallback, don't write bundle)
+const defaultSettings = {
+  interval: 5,
+  resolution: 1.0,
+  statusText: '待機中...',
+  isRecording: false,
+}
+
+// 'settings:read' - 우선적으로 userPath에서 읽고, 없으면 bundlePath를 읽어서 반환 (bundle은 수정하지 않음)
+ipcMain.handle('settings:read', async () => {
+  try {
+    const { userPath, bundlePath } = getSettingsPaths()
+
+    // user settings가 있으면 우선 사용
+    if (fs.existsSync(userPath)) {
+      const content = await fsp.readFile(userPath, 'utf8')
+      return Object.assign({}, defaultSettings, JSON.parse(content))
+    }
+
+    // userPath가 없으면 번들에 포함된 기본 파일을 읽어 반환 (단, 번들을 덮어쓰지 않음)
+    if (fs.existsSync(bundlePath)) {
+      const content = await fsp.readFile(bundlePath, 'utf8')
+      try {
+        return Object.assign({}, defaultSettings, JSON.parse(content))
+      } catch (err) {
+        console.error('bundle settings parse error', err)
+        return defaultSettings
+      }
+    }
+
+    // 둘 다 없으면 fallback(메모리 기본값) 반환
+    return defaultSettings
+  } catch (err) {
+    console.error('settings:read error', err)
+    return defaultSettings
+  }
+})
+
+// 'settings:write' - userPath로 저장 (패키징된 앱에서도 사용자별 데이터 폴더에 저장되도록)
+ipcMain.handle('settings:write', async (event, obj) => {
+  try {
+    const { userPath } = getSettingsPaths()
+    const dir = path.dirname(userPath)
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true })
+    }
+    const toWrite = Object.assign({}, defaultSettings, obj || {})
+    await fsp.writeFile(userPath, JSON.stringify(toWrite, null, 2), 'utf8')
+    return { ok: true }
+  } catch (err) {
+    console.error('settings:write error', err)
+    return { ok: false, error: String(err) }
+  }
+})
+
+// 파일 변경 감시 (userPath 및 bundlePath) — 앱 준비 후에 watcher 시작
+function startSettingsWatcher(win) {
+  try {
+    const { userPath, bundlePath } = getSettingsPaths()
+    const watchers = []
+    const sendChanged = () => {
+      if (win && !win.isDestroyed()) {
+        win.webContents.send('settings:changed', { ts: Date.now() })
+      }
+    }
+    const watchPath = (p) => {
+      try {
+        const w = fs.watch(p, { persistent: true }, (eventType) => {
+          // debounce
+          setTimeout(sendChanged, 100)
+        })
+        watchers.push(w)
+      } catch (err) {
+        // ignore if file doesn't exist yet
+      }
+    }
+
+    watchPath(userPath)
+    watchPath(bundlePath)
+
+    return () => watchers.forEach((w) => w.close())
+  } catch (err) {
+    console.error('startSettingsWatcher error', err)
+    return () => {}
+  }
+}
