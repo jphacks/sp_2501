@@ -7,163 +7,125 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <!-- Header -->
-  <header class="header">
-    <div class="container">
-      <div class="header-content">
-        <div class="header-left">
-          <div class="logo">
-            <svg class="logo-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-            </svg>
-          </div>
-          <div class="header-title">
-            <h1>Screen Capture AI</h1>
-            <p>自動スクリーンショット＆AI分析システム</p>
-          </div>
-        </div>
-        <div class="header-right">
-          <button class="btn btn-secondary" id="settingsBtn">設定</button>
-        </div>
-      </div>
-    </div>
-  </header>
-
-  <!-- Main Content -->
   <main class="main-content">
     <div class="container">
       <div class="grid">
-        <!-- Left Column -->
+        
         <div class="col-left">
-          <!-- Capture Control -->
           <section class="card">
-            <div class="card-header">
-              <h2 class="card-title">キャプチャ制御</h2>
-            </div>
-            <div class="card-content">
-              <div class="control-section">
-                <div class="control-row">
-                  <button class="btn btn-primary btn-large" id="startCaptureBtn">
-                    <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
-                    キャプチャ開始
-                  </button>
-                  <button class="btn btn-destructive btn-large" id="stopCaptureBtn" style="display: none;">
-                    <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"/>
-                    </svg>
-                    キャプチャ停止
-                  </button>
-                </div>
-
-                <div class="form-group">
-                  <label for="intervalInput">撮影間隔（秒）</label>
-                  <input type="number" id="intervalInput" class="input" value="30" min="5" max="300">
-                </div>
-
-                <div class="form-group">
-                  <label for="savePathInput">保存先パス</label>
-                  <div class="input-group">
-                    <input type="text" id="savePathInput" class="input" value="C:\Screenshots" readonly>
-                    <button class="btn btn-secondary" id="browseFolderBtn">参照</button>
-                  </div>
-                </div>
-
-                <div class="stats-grid">
-                  <div class="stat-card">
-                    <div class="stat-label">撮影枚数</div>
-                    <div class="stat-value" id="captureCount">0</div>
-                  </div>
-                  <div class="stat-card">
-                    <div class="stat-label">AI分析済み</div>
-                    <div class="stat-value" id="analyzedCount">0</div>
-                  </div>
-                  <div class="stat-card">
-                    <div class="stat-label">削除済み</div>
-                    <div class="stat-value" id="deletedCount">0</div>
-                  </div>
-                </div>
+            <div class="yoko yoko-left">
+              <div class="card-header">
+                <h2 class="card-title">キャプチャ制御</h2>
               </div>
-            </div>
-          </section>
+              <div class="card-content">
+                <div class="control-section">
+                  <div class="control-row">
+                    <button class="btn btn-primary btn-large" id="startCaptureBtn">
+                      <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                      </svg>
+                      キャプチャ開始
+                    </button>
+                    <button class="btn btn-destructive btn-large" id="stopCaptureBtn" style="display: none;">
+                      <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"/>
+                      </svg>
+                      キャプチャ停止
+                    </button>
+                  </div>
 
-          <!-- Screenshot Gallery -->
-          <section class="card">
-            <div class="card-header">
-              <h2 class="card-title">スクリーンショット一覧</h2>
-              <button class="btn btn-secondary btn-sm" id="refreshGalleryBtn">
-                <svg class="btn-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                </svg>
-                更新
-              </button>
-            </div>
-            <div class="card-content">
-              <div class="gallery" id="screenshotGallery">
-                <!-- Screenshots will be dynamically inserted here -->
-                <div class="empty-state">
-                  <svg class="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                  </svg>
-                  <p>スクリーンショットがまだありません</p>
-                  <p class="empty-hint">キャプチャを開始してください</p>
+                  <div class="form-group">
+                    <label for="intervalInput">撮影間隔（分）</label>
+                    <select id="intervalInput" class="select">
+                      <option value="1">1分</option>
+                      <option value="2">2分</option>
+                      <option value="3">3分</option>
+                      <option value="5">5分</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="savePathInput">保存先パス</label>
+                    <div class="input-group">
+                      <input type="text" id="savePathInput" class="input" value="C:\Screenshots" readonly>
+                      <button class="btn btn-secondary" id="browseFolderBtn">参照</button>
+                    </div>
+                  </div>
+
+                  <div class="stats-grid">
+                    <div class="stat-card">
+                      <div class="stat-label">撮影枚数</div>
+                      <div class="stat-value" id="captureCount">0</div>
+                    </div>
+                    <div class="stat-card">
+                      <div class="stat-label">AI分析済み</div>
+                      <div class="stat-value" id="analyzedCount">0</div>
+                    </div>
+                    <div class="stat-card">
+                      <div class="stat-label">削除済み</div>
+                      <div class="stat-value" id="deletedCount">0</div>
+                    </div>
+                  </div>
                 </div>
+              </div>   
+            </div>
+
+
+            <div class="yoko yoko-right">
+              <div class="card-header">
+                <h2 class="card-title">処理状況</h2>
               </div>
-            </div>
-          </section>
-        </div>
-
-        <!-- Right Column -->
-        <div class="col-right">
-          <!-- Processing Status -->
-          <section class="card">
-            <div class="card-header">
-              <h2 class="card-title">処理状況</h2>
-            </div>
-            <div class="card-content">
-              <div class="status-section">
-                <div class="status-item">
-                  <div class="status-header">
-                    <span class="status-label">システム状態</span>
-                    <span class="badge badge-success" id="systemStatus">待機中</span>
+              <div class="card-content">
+                <div class="status-section">
+                  <div class="status-item">
+                    <div class="status-header">
+                      <span class="status-label">システム状態</span>
+                      <span class="badge badge-success" id="systemStatus">待機中</span>
+                    </div>
                   </div>
-                </div>
 
-                <div class="status-item">
-                  <div class="status-header">
-                    <span class="status-label">AI分析</span>
-                    <span class="badge badge-info" id="aiStatus">準備完了</span>
+                  <div class="status-item">
+                    <div class="status-header">
+                      <span class="status-label">AI分析</span>
+                      <span class="badge badge-info" id="aiStatus">準備完了</span>
+                    </div>
+                    <div class="progress-bar">
+                      <div class="progress-fill" id="aiProgress" style="width: 0%"></div>
+                    </div>
+                    <div class="progress-text" id="aiProgressText">0 / 0</div>
                   </div>
-                  <div class="progress-bar">
-                    <div class="progress-fill" id="aiProgress" style="width: 0%"></div>
-                  </div>
-                  <div class="progress-text" id="aiProgressText">0 / 0</div>
-                </div>
 
-                <div class="status-item">
-                  <div class="status-header">
-                    <span class="status-label">OpenAI API</span>
-                    <span class="badge badge-success" id="apiStatus">接続済み</span>
+                  <div class="status-item">
+                    <div class="status-header">
+                      <span class="status-label">OpenAI API</span>
+                      <span class="badge badge-success" id="apiStatus">接続済み</span>
+                    </div>
                   </div>
-                </div>
 
-                <div class="activity-log">
-                  <h3 class="activity-title">アクティビティログ</h3>
-                  <div class="activity-list" id="activityLog">
-                    <div class="activity-item">
-                      <span class="activity-time">--:--:--</span>
-                      <span class="activity-message">システム起動完了</span>
+                  <div class="activity-log">
+                    <h3 class="activity-title">アクティビティログ</h3>
+                    <div class="activity-list" id="activityLog">
+                      <div class="activity-item">
+                        <span class="activity-time">--:--:--</span>
+                        <span class="activity-message">システム起動完了</span>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </section>
 
-          <!-- Report Generator -->
+
+
+
+
+            </div>
+
+          </section>
+        </div>
+
+        <div class="col-right">
           <section class="card">
             <div class="card-header">
               <h2 class="card-title">レポート生成</h2>
@@ -214,12 +176,15 @@
               </div>
             </div>
           </section>
+          
+
         </div>
+        
       </div>
     </div>
   </main>
 
   <script src="main.js"></script>
-  <script src="./transFrom.js"></script>
+  <script src="transFrom.js"></script>
 </body>
 </html>
