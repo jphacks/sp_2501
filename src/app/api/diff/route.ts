@@ -5,7 +5,7 @@ import os from 'os';
 
 // --- OpenAI API 設定 ---
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
-const OPENAI_MODEL_NAME = 'gpt-4o-mini';
+const OPENAI_MODEL_NAME = 'gpt-5-nano';
 
 // --- Developer Prompt 読み込み ---
 const developerPromptPath = path.join(

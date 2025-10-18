@@ -5,7 +5,7 @@ import { PrismaClient } from '@prisma/client';
 
 // --- OpenAI API 向け設定 ---
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
-const MODEL_NAME = 'gpt-4o-mini';
+const MODEL_NAME = 'gpt-5';
 
 // --- Developer Prompt 読み込み ---
 const developerPromptPath = path.join(
