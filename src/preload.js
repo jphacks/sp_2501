@@ -1,3 +1,4 @@
+console.log('preload: loaded'); // Electron の DevTools コンソールに出るはず
 const { contextBridge, ipcRenderer } = require('electron');
 
 // 'api'という名前でwindowオブジェクトに安全に関数を公開します。

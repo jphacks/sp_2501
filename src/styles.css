@@ -145,6 +145,7 @@ body {
   display: flex; /* 子要素である .yoko を横並びにする */
   gap: 1.5rem;   /* 横並びになった要素の間に余白を追加 */
   transition: all 0.3s;
+  height: 630px;
 }
 
 .yoko {
@@ -177,6 +178,7 @@ body {
 
 .card-content {
   padding: 1.25rem;
+  margin-top: px;
 }
 
 /* Buttons */
@@ -317,17 +319,16 @@ body {
   background-color: var(--background);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 1rem;
+  padding: 0.4rem;
   text-align: center;
   transition: all 0.3s;
 }
 
 .stat-label {
-  font-size: 0.75rem;
+  font-size: 1rem;
   color: var(--muted-foreground);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  margin-bottom: 0.5rem;
   transition: all 0.3s;
 }
 
@@ -666,3 +667,10 @@ body {
         .badge-success, .badge-info, .badge-warning {
           transition: background-color .2s, color .2s;
         }
+
+
+        #isCapturing {
+  background-color: #000000; /* 背景を黒に */
+  color: #ffffff;             /* 文字色を白に (見やすくするため) */
+  border: 1px solid #555;    /* 境界線も少し明るくする */
+}

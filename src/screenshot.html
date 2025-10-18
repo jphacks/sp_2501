@@ -71,11 +71,11 @@
 
                   <div class="stats-grid">
                     <div class="stat-card">
-                      <div class="stat-label">撮影枚数</div>
+                      <div class="stat-label">合計撮影枚数</div>
                       <div class="stat-value" id="captureCount">0</div>
                     </div>
                     <div class="stat-card">
-                      <div class="stat-label">AI分析済み</div>
+                      <div class="stat-label">合計写真サイズ</div>
                       <div class="stat-value" id="analyzedCount">0</div>
                     </div>
                     <div class="stat-card">
@@ -83,6 +83,13 @@
                       <div class="stat-value" id="deletedCount">0</div>
                     </div>
                   </div>
+
+<div class="input-container">
+    <!-- textarea を div に変更 -->
+    <div id="isCapturing"><h1>eeeeeeeeeeee</h1>山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山横山</div>
+        
+    <div class="gradient-overlay"></div>
+</div>
                 </div>
               </div>   
             </div>
@@ -144,7 +151,7 @@
         </div>
 
         <div class="col-right">
-          <section class="card">
+          <section class="card yoko">
             <div class="card-header">
               <h2 class="card-title">レポート生成</h2>
             </div>
@@ -196,7 +203,9 @@
     </div>
   </main>
 
-  <script src="main.js"></script>
+  <!-- main.js は Electron の main プロセス用なのでレンダラで読み込まない -->
+  <!-- <script src="main.js"></script> -->
+
   <script src="renderer.js"></script>
   <script src="transFrom.js"></script>
   <script src="refering.js"></script>
