@@ -2,6 +2,9 @@ import os
 import time
 import requests # HTTP通信ライブラリー
 import schedule # 定期的な作業のためのライブラリ (py -m pip install schedule)
+import image_util
+import shutil # ファイル移動のためのライブラリ
+
 
 # --- 設定 ---
 # app.pyと同じロジックでscreenshotフォルダのパスを見つけます。
@@ -15,6 +18,9 @@ VERCEL_API_URL = f'https://{request_URL}/api/upload'
 
 UPLOAD_INTERVAL_SECONDS = 10 # 10秒ごとにフォルダを確認
 BATCH_SIZE = 2              # 2つずつまとめて送信
+# 送信後の処理: True=送信後にファイルを削除, False=削除せず "uploaded" サブフォルダへ移動
+DELETE_AFTER_UPLOAD = False   #ファイルを削除する場合はTrue、移動する場合はFalseに設定
+UPLOADED_SUBDIR = 'uploaded'
 
 # --- 送信ロジック ---
 
@@ -23,6 +29,15 @@ def send_screenshots(filepaths):
     指定されたファイルパスのリストをmultipart/form-dataでサーバーにPOST送信します。
     """
     print(f"送信試行: {len(filepaths)}個のファイル")
+
+    # 必要なフォルダが存在するかを事前にチェック・作成
+    try:
+        os.makedirs(SCREENSHOT_DIR, exist_ok=True)
+        if not DELETE_AFTER_UPLOAD:
+            uploaded_dir = os.path.join(SCREENSHOT_DIR, UPLOADED_SUBDIR)
+            os.makedirs(uploaded_dir, exist_ok=True)
+    except Exception as e:
+        print(f"フォルダの準備に失敗しました: {e}")
 
     opened_files = [] # 開いたファイルオブジェクトを管理するためのリスト
     try:
@@ -80,10 +95,26 @@ def job():
 
             # 送信試行
             if send_screenshots(files_to_send):
-                # 送信成功時にローカルファイルを削除
-                for path in files_to_send:
-                    os.remove(path)
-                    print(f"削除完了: {path}")
+                # 送信成功時の後処理: 削除またはアップロード済フォルダへ移動
+                if DELETE_AFTER_UPLOAD:
+                    for path in files_to_send:
+                        try:
+                            os.remove(path)
+                            print(f"削除完了: {path}")
+                        except Exception as e:
+                            print(f"削除失敗: {path} - {e}")
+                else:
+                    # uploaded サブフォルダに移動して「送信済み」を表す
+                    uploaded_dir = os.path.join(SCREENSHOT_DIR, UPLOADED_SUBDIR)
+                    os.makedirs(uploaded_dir, exist_ok=True)
+                    for path in files_to_send:
+                        try:
+                            dest = os.path.join(uploaded_dir, os.path.basename(path))
+                            # shutil.move はファイルを移動（名前変更）します
+                            shutil.move(path, dest)
+                            print(f"移動完了: {path} -> {dest}")
+                        except Exception as e:
+                            print(f"移動失敗: {path} - {e}")
             else:
                 print("送信に失敗したため、ファイルを削除しません。")
 
