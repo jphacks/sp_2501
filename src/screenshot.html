@@ -1,34 +1,224 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja" class="dark">
 <head>
-    <meta charset="UTF-8">
-    <title>自動スクリーンショット設定</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Screen Capture AI - 自動スクリーンショット＆AI分析システム</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <h1>自動スクリーンショット設定</h1>
-    
-    <!-- 保存場所はバックエンド側で固定されているため、入力欄は削除しました -->
-    <div>
-        <label for="interval">撮影間隔 (秒):</label>
-        <input type="number" id="interval" value="5">
+  <!-- Header -->
+  <header class="header">
+    <div class="container">
+      <div class="header-content">
+        <div class="header-left">
+          <div class="logo">
+            <svg class="logo-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+          </div>
+          <div class="header-title">
+            <h1>Screen Capture AI</h1>
+            <p>自動スクリーンショット＆AI分析システム</p>
+          </div>
+        </div>
+        <div class="header-right">
+          <button class="btn btn-secondary" id="settingsBtn">設定</button>
+        </div>
+      </div>
     </div>
-    <br>
-    <div>
-        <label for="resolution">解像度スケール:</label>
-        <select id="resolution">
-            <option value="1.0">100% (フル解像度)</option>
-            <option value="0.75">75%</option>
-            <option value="0.5">50%</option>
-        </select>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="container">
+      <div class="grid">
+        <!-- Left Column -->
+        <div class="col-left">
+          <!-- Capture Control -->
+          <section class="card">
+            <div class="card-header">
+              <h2 class="card-title">キャプチャ制御</h2>
+            </div>
+            <div class="card-content">
+              <div class="control-section">
+                <div class="control-row">
+                  <button class="btn btn-primary btn-large" id="startCaptureBtn">
+                    <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    キャプチャ開始
+                  </button>
+                  <button class="btn btn-destructive btn-large" id="stopCaptureBtn" style="display: none;">
+                    <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"/>
+                    </svg>
+                    キャプチャ停止
+                  </button>
+                </div>
+
+                <div class="form-group">
+                  <label for="intervalInput">撮影間隔（秒）</label>
+                  <input type="number" id="intervalInput" class="input" value="30" min="5" max="300">
+                </div>
+
+                <div class="form-group">
+                  <label for="savePathInput">保存先パス</label>
+                  <div class="input-group">
+                    <input type="text" id="savePathInput" class="input" value="C:\Screenshots" readonly>
+                    <button class="btn btn-secondary" id="browseFolderBtn">参照</button>
+                  </div>
+                </div>
+
+                <div class="stats-grid">
+                  <div class="stat-card">
+                    <div class="stat-label">撮影枚数</div>
+                    <div class="stat-value" id="captureCount">0</div>
+                  </div>
+                  <div class="stat-card">
+                    <div class="stat-label">AI分析済み</div>
+                    <div class="stat-value" id="analyzedCount">0</div>
+                  </div>
+                  <div class="stat-card">
+                    <div class="stat-label">削除済み</div>
+                    <div class="stat-value" id="deletedCount">0</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Screenshot Gallery -->
+          <section class="card">
+            <div class="card-header">
+              <h2 class="card-title">スクリーンショット一覧</h2>
+              <button class="btn btn-secondary btn-sm" id="refreshGalleryBtn">
+                <svg class="btn-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                </svg>
+                更新
+              </button>
+            </div>
+            <div class="card-content">
+              <div class="gallery" id="screenshotGallery">
+                <!-- Screenshots will be dynamically inserted here -->
+                <div class="empty-state">
+                  <svg class="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                  </svg>
+                  <p>スクリーンショットがまだありません</p>
+                  <p class="empty-hint">キャプチャを開始してください</p>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- Right Column -->
+        <div class="col-right">
+          <!-- Processing Status -->
+          <section class="card">
+            <div class="card-header">
+              <h2 class="card-title">処理状況</h2>
+            </div>
+            <div class="card-content">
+              <div class="status-section">
+                <div class="status-item">
+                  <div class="status-header">
+                    <span class="status-label">システム状態</span>
+                    <span class="badge badge-success" id="systemStatus">待機中</span>
+                  </div>
+                </div>
+
+                <div class="status-item">
+                  <div class="status-header">
+                    <span class="status-label">AI分析</span>
+                    <span class="badge badge-info" id="aiStatus">準備完了</span>
+                  </div>
+                  <div class="progress-bar">
+                    <div class="progress-fill" id="aiProgress" style="width: 0%"></div>
+                  </div>
+                  <div class="progress-text" id="aiProgressText">0 / 0</div>
+                </div>
+
+                <div class="status-item">
+                  <div class="status-header">
+                    <span class="status-label">OpenAI API</span>
+                    <span class="badge badge-success" id="apiStatus">接続済み</span>
+                  </div>
+                </div>
+
+                <div class="activity-log">
+                  <h3 class="activity-title">アクティビティログ</h3>
+                  <div class="activity-list" id="activityLog">
+                    <div class="activity-item">
+                      <span class="activity-time">--:--:--</span>
+                      <span class="activity-message">システム起動完了</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Report Generator -->
+          <section class="card">
+            <div class="card-header">
+              <h2 class="card-title">レポート生成</h2>
+            </div>
+            <div class="card-content">
+              <div class="report-section">
+                <div class="form-group">
+                  <label for="reportFormat">出力形式</label>
+                  <select id="reportFormat" class="select">
+                    <option value="markdown">Markdown (.md)</option>
+                    <option value="docx">Word文書 (.docx)</option>
+                    <option value="pdf">PDF (.pdf)</option>
+                    <option value="html">HTML (.html)</option>
+                    <option value="txt">テキスト (.txt)</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="reportTitle">レポートタイトル</label>
+                  <input type="text" id="reportTitle" class="input" placeholder="例: 作業記録 2024-01-15">
+                </div>
+
+                <div class="checkbox-group">
+                  <label class="checkbox-label">
+                    <input type="checkbox" id="includeImages" checked>
+                    <span>画像を含める</span>
+                  </label>
+                  <label class="checkbox-label">
+                    <input type="checkbox" id="includeTimestamps" checked>
+                    <span>タイムスタンプを含める</span>
+                  </label>
+                  <label class="checkbox-label">
+                    <input type="checkbox" id="includeSummary" checked>
+                    <span>AI要約を含める</span>
+                  </label>
+                </div>
+
+                <button class="btn btn-primary btn-large btn-full" id="generateReportBtn">
+                  <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                  </svg>
+                  レポート生成
+                </button>
+
+                <div class="report-info">
+                  <p class="info-text">分析済みデータ: <span id="reportDataCount">0</span> 件</p>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
     </div>
-    <br>
-    <button id="btn-start">開始</button>
-    <button id="btn-stop">停止</button>
+  </main>
 
-    <hr>
-    
-    <p>ステータス: <span id="status-text">待機中...</span></p>
-
-    <script src="./renderer.js"></script>
+  <script src="main.js"></script>
 </body>
 </html>
