@@ -738,3 +738,82 @@ body {
 #isCapturing::-webkit-scrollbar {
     display: none;
 }
+
+
+
+
+/* 過去のレポートリストのスタイル追加 */
+.report-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.report-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.report-list::-webkit-scrollbar-track {
+  background: var(--background);
+  border-radius: 3px;
+}
+
+.report-list::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+.report-list-item {
+  background-color: var(--background);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.report-list-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-color: var(--primary);
+}
+
+.report-list-item-content {
+  flex: 1;
+}
+
+.report-list-item-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--foreground);
+  margin-bottom: 0.25rem;
+  transition: all 0.3s;
+}
+
+.report-list-item-meta {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  transition: all 0.3s;
+}
+
+.report-list-item-icon {
+  width: 20px;
+  height: 20px;
+  color: var(--muted-foreground);
+  flex-shrink: 0;
+}
+
+.report-list-empty {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+}
+
