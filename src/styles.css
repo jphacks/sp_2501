@@ -631,3 +631,38 @@ body {
             /* つまみを右に移動させる */
             transform: translateX(20px);
         }
+
+                /* ---- AI分析：3点アニメーション ---- */
+        .ai-dots {
+          display: none;              /* デフォルト非表示（録画時のみ表示） */
+          gap: 8px;
+          margin-top: 6px;
+          align-items: center;
+        }
+
+        .ai-dots .dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: var(--success); /* 緑（バッジと同色） */
+          opacity: 0.25;
+        }
+
+        .ai-dots.running { display: inline-flex; }
+
+        @keyframes ai-dot-blink {
+          0%   { opacity: 0.25; }
+          20%  { opacity: 1; }
+          40%  { opacity: 0.25; }
+          100% { opacity: 0.25; }
+        }
+
+        /* 左→右に0.3sずつ遅延して“点灯が流れる” */
+        .ai-dots.running .dot:nth-child(1) { animation: ai-dot-blink 0.9s infinite; animation-delay: 0s;   }
+        .ai-dots.running .dot:nth-child(2) { animation: ai-dot-blink 0.9s infinite; animation-delay: 0.3s; }
+        .ai-dots.running .dot:nth-child(3) { animation: ai-dot-blink 0.9s infinite; animation-delay: 0.6s; }
+
+        /* バッジの色切り替えを簡単にするためのユーティリティ */
+        .badge-success, .badge-info, .badge-warning {
+          transition: background-color .2s, color .2s;
+        }

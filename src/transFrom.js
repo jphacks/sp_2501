@@ -341,3 +341,105 @@ ${imagesHTML}
 
   Object.defineProperty(window,'SCReport',{ value:{ collectScreenshots, tryFetchAISummary }, writable:false });
 })();
+// transForm.js
+document.addEventListener('DOMContentLoaded', () => {
+  const btnStart = document.getElementById('btn-start');
+  const systemStatus = document.getElementById('systemStatus');
+  const aiStatus = document.getElementById('aiStatus');
+  const apiStatus = document.getElementById('apiStatus');
+  const activityLog = document.getElementById('activityLog');
+
+  // 初期表示
+  [['ai', aiStatus, '準備完了', 'badge-success'],
+   ['api', apiStatus, '接続済み', 'badge-success'],
+   ['sys', systemStatus, '待機中', 'badge-success']].forEach(([, el, text, klass])=>{
+    el.classList.remove('badge-success','badge-info','badge-warning');
+    el.classList.add(klass);
+    el.textContent = text;
+  });
+
+  // === AI分析ドット：バッジの“真下”に置く ===
+  const aiStatusItem = aiStatus.closest('.status-item');            // AI分析の項目
+  const aiHeader = aiStatusItem.querySelector('.status-header');    // ラベル＋バッジの行
+
+  const aiDotsContainer = document.createElement('div');
+  aiDotsContainer.className = 'ai-dots-container';
+  const dots = Array.from({length:3}, () => {
+    const d = document.createElement('span');
+    d.className = 'ai-dot';
+    aiDotsContainer.appendChild(d);
+    return d;
+  });
+
+  // ← ここが肝：同じ .status-item 内で、ヘッダ行の直後に追加（縦に1段下がる）
+  aiHeader.insertAdjacentElement('afterend', aiDotsContainer);
+
+  // スタイル（CSSは触らない前提でJS注入）
+  const style = document.createElement('style');
+  style.textContent = `
+    /* ドット行は .status-item の中で右端（=バッジの列）に寄せる */
+    .status-item { display: flex; flex-direction: column; }
+    .ai-dots-container {
+      display: flex;
+      justify-content: flex-end;   /* 右寄せ＝バッジ直下に揃う */
+      gap: 8px;
+      margin-top: .4rem;
+      min-height: 12px;
+    }
+    .ai-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--border); opacity: .5;
+      transition: opacity .15s, transform .15s, background-color .15s;
+    }
+    .ai-dot.on { background: var(--success); opacity: 1; transform: scale(1.2); }
+  `;
+  document.head.appendChild(style);
+
+  // ドットアニメ制御
+  let isRecording = false, timer = null, idx = 0;
+  const startDots = () => {
+    stopDots(); idx = 0;
+    timer = setInterval(() => {
+      dots.forEach((d,i)=>d.classList.toggle('on', i===idx));
+      idx = (idx+1)%dots.length;
+    }, 300);
+  };
+  const stopDots = () => {
+    if (timer) clearInterval(timer);
+    dots.forEach(d=>d.classList.remove('on'));
+    timer = null;
+  };
+
+  // ユーティリティ
+  const setBadge = (el, text, colorClass) => {
+    el.classList.remove('badge-success','badge-info','badge-warning');
+    el.classList.add(colorClass);
+    el.textContent = text;
+  };
+  const addLog = (msg) => {
+    if (!activityLog) return;
+    const row = document.createElement('div');
+    row.className = 'activity-item';
+    row.innerHTML = `<span class="activity-time">${new Date().toLocaleTimeString()}</span>
+                     <span class="activity-message">${msg}</span>`;
+    activityLog.prepend(row);
+  };
+
+  // 録画トグル
+  btnStart.addEventListener('click', () => {
+    isRecording = !isRecording;
+    if (isRecording) {
+      setBadge(systemStatus, '稼働中', 'badge-info');   // 水色
+      setBadge(aiStatus, '稼働中', 'badge-info');       // 水色
+      setBadge(apiStatus, '接続済み', 'badge-success'); // 緑
+      startDots();
+      addLog('録画を開始しました');
+    } else {
+      setBadge(systemStatus, '待機中', 'badge-success'); // 緑
+      setBadge(aiStatus, '準備完了', 'badge-success');   // 緑
+      setBadge(apiStatus, '接続済み', 'badge-success');  // 緑
+      stopDots();
+      addLog('録画を停止しました');
+    }
+  });
+});
