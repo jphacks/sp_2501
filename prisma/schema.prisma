@@ -9,13 +9,16 @@ generator client {
 }
 
 model User{
-    userSystemId        String @id @default(cuid())　//共通で使うユーザー区別用のシステムID
-    name                String?　//グーグルニックネーム
-    email               String? @unique　//グーグルメールアドレス
-    emailVerified       DateTime?　//認証日時
-    image               String?　//プロフィール画像（グーグルのURL）
-    createdAt           DateTime @default(now())　//作成日時
-    updatedAt           DateTime @updatedAt　//更新日時
+    // Standard NextAuth primary key
+    id                  String @id @default(cuid())
+    // Existing project-specific system id (kept for compatibility)
+    userSystemId        String @unique @default(cuid())
+    name                String?
+    email               String? @unique
+    emailVerified       DateTime?
+    image               String?
+    createdAt           DateTime @default(now())
+    updatedAt           DateTime @updatedAt
 
     accounts            Account[]
     sessions            Session[]
@@ -24,7 +27,9 @@ model User{
 
 model Account {
     id                  String @id @default(cuid())
-    userSystemId        String
+    // userId references User.id to satisfy NextAuth adapter expectations
+    userId              String
+    userSystemId        String?
     type                String  //login type
     provider            String  //google
     providerAccountId   String
@@ -38,17 +43,18 @@ model Account {
     refresh_token       String?  @db.Text
     session_state       String?
 
-    user User @relation(fields: [userSystemId], references: [userSystemId], onDelete: Cascade)
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
     @@unique([provider, providerAccountId])
 }
 
 model Session{
     id                  String @id @default(cuid())
+    // userId references User.id (NextAuth standard)
     userId              String
-    userSystemId        String
+    userSystemId        String?
     sessionToken        String @unique
     expires             DateTime
-    user User @relation(fields: [userSystemId], references: [userSystemId], onDelete: Cascade)
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model VerificationToken{
