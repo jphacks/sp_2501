@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+import { PrismaClient } from '@prisma/client';
 
 // --- OpenAI API 向け設定 ---
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
-const MODEL_NAME = 'gpt-5';
+const MODEL_NAME = 'gpt-4o-mini';
 
 // --- Developer Prompt 読み込み ---
 const developerPromptPath = path.join(
@@ -39,7 +40,8 @@ if (isDeveloperModeEnabled) {
 
 // --- リクエスト／レスポンス型 ---
 type SummaryRequestBody = {
-  text: string;
+  userSystemId: string;
+  taskDate: string;
   instructions?: string;
   language?: string;
 };
@@ -50,10 +52,16 @@ type SummaryResponseBody = {
   rationale?: string;
 };
 
+type SummaryGenerationParams = {
+  text: string;
+  instructions?: string;
+  language?: string;
+};
+
 // OpenAI API に要約生成を依頼するヘルパー関数
 async function requestSummaryFromOpenAI(
   apiKey: string,
-  { text, instructions, language }: SummaryRequestBody
+  { text, instructions, language }: SummaryGenerationParams
 ): Promise<SummaryResponseBody> {
   const systemPrompt = [
     'あなたは正確で簡潔な要約を生成するアシスタントです。',
@@ -133,6 +141,17 @@ async function requestSummaryFromOpenAI(
 
 export const runtime = 'nodejs';
 
+declare global {
+  // eslint-disable-next-line no-var
+  var prisma: PrismaClient | undefined;
+}
+
+const prisma = globalThis.prisma ?? new PrismaClient();
+
+if (process.env.NODE_ENV !== 'production') {
+  globalThis.prisma = prisma;
+}
+
 export async function POST(request: NextRequest) {
   // App Router 経由でのメソッド制限
   if (request.method !== 'POST') {
@@ -156,20 +175,72 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: 'JSON ボディが不正です。' }, { status: 400 });
   }
 
-  const text = body.text?.trim();
+  const userSystemId = body.userSystemId?.trim();
+  const taskDate = body.taskDate?.trim();
 
-  if (!text) {
-    return NextResponse.json({ message: 'text フィールドは必須です。' }, { status: 400 });
+  if (!userSystemId || !taskDate) {
+    return NextResponse.json(
+      { message: 'userSystemId と taskDate は必須です。' },
+      { status: 400 }
+    );
   }
 
-  developerLog('リクエストボディを受信しました。', {
+  developerLog('リクエストパラメータを受信しました。', {
+    userSystemId,
+    taskDate,
     instructions: body.instructions,
     language: body.language,
-    textPreview: text.slice(0, 120),
   });
 
+  const taskDateObj = new Date(taskDate);
+
+  if (Number.isNaN(taskDateObj.getTime())) {
+    return NextResponse.json({ message: 'taskDate の形式が不正です。' }, { status: 400 });
+  }
+
+  let text: string | null = null;
+
   try {
-    const summary = await requestSummaryFromOpenAI(apiKey, { ...body, text });
+    const logEntry = await prisma.userTaskPersonalLog.findUnique({
+      where: {
+        userSystemId_taskDateId: {
+          userSystemId,
+          taskDateId: taskDateObj,
+        },
+      },
+      select: {
+        taskContent: true,
+      },
+    });
+
+    text = logEntry?.taskContent?.trim() ?? null;
+
+    developerLog('データベースからタスク内容を取得しました。', {
+      found: Boolean(logEntry),
+      hasContent: Boolean(text),
+      textPreview: text?.slice(0, 120),
+    });
+  } catch (error) {
+    console.error('[summary] DB 取得エラー:', error);
+    return NextResponse.json(
+      { message: 'タスク内容の取得に失敗しました。', details: (error as Error).message },
+      { status: 500 }
+    );
+  }
+
+  if (!text) {
+    return NextResponse.json(
+      { message: '指定されたタスク内容が見つかりません。' },
+      { status: 404 }
+    );
+  }
+
+  try {
+    const summary = await requestSummaryFromOpenAI(apiKey, {
+      text,
+      instructions: body.instructions,
+      language: body.language,
+    });
     return NextResponse.json(summary);
   } catch (error) {
     console.error('[summary] OpenAI API エラー:', error);
