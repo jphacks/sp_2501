@@ -9,6 +9,7 @@ let pythonProcess = null; // Pythonの子プロセスを格納する変数
 function createPythonProcess() {
   // backend/app.py lives at repository root (../backend/app.py relative to src/)
   pythonProcess = spawn('py', [path.join(__dirname, '..', 'backend', 'app.py')]);
+  uploadProcess = spawn('py', [path.join(__dirname, '..', 'backend', 'uploader.py')]);
 
   // Pythonスクリプトの標準出力(print)をコンソールに出力
   pythonProcess.stdout.on('data', (data) => {

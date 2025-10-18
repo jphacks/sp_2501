@@ -10,7 +10,8 @@ REPO_ROOT = os.path.dirname(os.path.dirname(__file__))
 SCREENSHOT_DIR = os.path.join(REPO_ROOT, 'screenshot')
 
 # ★★★ 전송할 Vercel API의 URL을 입력하세요. ★★★
-VERCEL_API_URL = "https://[YOUR_VERCEL_PROJECT_URL]/api/upload"
+request_URL = "" # 예: 'myapp.vercel.app'
+VERCEL_API_URL = f'https://{request_URL}/api/upload'
 
 UPLOAD_INTERVAL_SECONDS = 10 # 10초마다 폴더를 확인
 BATCH_SIZE = 2              # 2개씩 묶어서 전송
