@@ -24,7 +24,20 @@
   --success: #28a745;
   --info: #17a2b8;
   --radius: 8px;
+  transition: all 0.3s;
 }
+
+/* ダークテーマによる上書き */
+[data-theme="dark"] {
+  --background: #333333;
+  --foreground: #ffffff;
+  --card: #444444;
+  --card-foreground: #ffffff;
+  --muted-foreground: #ffffff;
+  --border: #111111;
+  transition: all 0.3s;
+}
+
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", sans-serif;
@@ -32,6 +45,7 @@ body {
   color: var(--foreground);
   line-height: 1.6;
   min-height: 100vh;
+  transition: all 0.3s;
 }
 
 /* Container */
@@ -46,6 +60,7 @@ body {
   background-color: var(--card);
   border-bottom: 1px solid var(--border);
   padding: 1rem 0;
+  transition: all 0.3s;
 }
 
 .header-content {
@@ -86,11 +101,13 @@ body {
   font-size: 1.25rem;
   font-weight: 600;
   color: var(--foreground);
+  transition: all 0.3s;
 }
 
 .header-title p {
   font-size: 0.875rem;
   color: var(--muted-foreground);
+  transition: all 0.3s;
 }
 
 /* Main Content */
@@ -127,6 +144,7 @@ body {
   overflow: hidden;
   display: flex; /* 子要素である .yoko を横並びにする */
   gap: 1.5rem;   /* 横並びになった要素の間に余白を追加 */
+  transition: all 0.3s;
 }
 
 .yoko {
@@ -145,7 +163,6 @@ body {
 
 .card-header {
   padding: 1.25rem;
-  border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -155,6 +172,7 @@ body {
   font-size: 1.125rem;
   font-weight: 600;
   color: var(--foreground);
+  transition: all 0.3s;
 }
 
 .card-content {
@@ -223,6 +241,7 @@ body {
 /* Form Elements */
 .form-group {
   margin-bottom: 1rem;
+  transition: all 0.3s;
 }
 
 .form-group label {
@@ -231,6 +250,7 @@ body {
   font-weight: 500;
   color: var(--foreground);
   margin-bottom: 0.5rem;
+  transition: all 0.3s;
 }
 
 .input,
@@ -244,6 +264,7 @@ body {
   border-radius: var(--radius);
   outline: none;
   transition: border-color 0.2s;
+  transition: all 0.3s;
 }
 
 .input:focus,
@@ -275,6 +296,7 @@ body {
   font-size: 0.875rem;
   color: var(--foreground);
   cursor: pointer;
+  transition: all 0.3s;
 }
 
 .checkbox-label input[type="checkbox"] {
@@ -297,6 +319,7 @@ body {
   border-radius: var(--radius);
   padding: 1rem;
   text-align: center;
+  transition: all 0.3s;
 }
 
 .stat-label {
@@ -305,6 +328,7 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: 0.5rem;
+  transition: all 0.3s;
 }
 
 .stat-value {
@@ -432,6 +456,7 @@ body {
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--foreground);
+  transition: all 0.3s;
 }
 
 /* Progress Bar */
@@ -465,6 +490,7 @@ body {
   font-weight: 600;
   color: var(--foreground);
   margin-bottom: 0.75rem;
+  transition: all 0.3s;
 }
 
 .activity-list {
@@ -473,6 +499,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  transition: all 0.3s;
 }
 
 .activity-item {
@@ -482,16 +509,19 @@ body {
   padding: 0.5rem;
   background-color: var(--background);
   border-radius: var(--radius);
+  transition: all 0.3s;
 }
 
 .activity-time {
   color: var(--muted-foreground);
   font-family: monospace;
   flex-shrink: 0;
+  transition: all 0.3s;
 }
 
 .activity-message {
   color: var(--foreground);
+  transition: all 0.3s;
 }
 
 /* Report Section */
@@ -550,3 +580,54 @@ body {
 .activity-list::-webkit-scrollbar-thumb:hover {
   background: var(--muted);
 }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 51px;  /* iOSの標準的な幅 */
+            height: 31px; /* iOSの標準的な高さ */
+            cursor: pointer;
+        }
+
+        /* チェックボックス本体は非表示にする */
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        /* スイッチの背景（スライダー部分） */
+        .slider {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #e9e9eb; /* オフの時の背景色 */
+            border-radius: 34px; /* 角を完全に丸める */
+            transition: background-color 0.2s; /* 背景色のアニメーション */
+        }
+
+        /* スイッチのつまみ（円形の部分） */
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 27px; /* つまみの高さ */
+            width: 27px;  /* つまみの幅 */
+            left: 2px;    /* 左からの位置 */
+            bottom: 2px;  /* 下からの位置 */
+            background-color: white;
+            border-radius: 50%; /* 完全な円にする */
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2); /* わずかな影 */
+            transition: transform 0.2s; /* つまみの移動アニメーション */
+        }
+
+        /* チェックボックスがONになった時のスタイルの変更 */
+        input:checked + .slider {
+            background-color: #34c759; /* ONの時の背景色（iOSの緑） */
+        }
+
+        input:checked + .slider:before {
+            /* つまみを右に移動させる */
+            transform: translateX(20px);
+        }

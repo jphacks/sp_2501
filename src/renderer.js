@@ -25,17 +25,25 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   
   const toggle = document.getElementById('myToggle');
+  const htmlElement = document.documentElement; // <html>要素
 
+  // トグルスイッチの状態が変更された時の処理
   toggle.addEventListener('change', function() {
-            if (this.checked) {
-                console.log('スイッチがオンになりました');
-                // ここにオンになった時の処理を書く
-            } else {
-                console.log('スイッチがオフになりました');
-                // ここにオフになった時の処理を書く
-            }
+    // 'this.checked' は、スイッチがオンの時に true になります
+    if (this.checked) {
+      // スイッチがオンになった時の処理
+      console.log('スイッチがオンになりました -> ダークモード適用');
+      htmlElement.setAttribute('data-theme', 'dark');
+    } else {
+      // スイッチがオフになった時の処理
+      console.log('スイッチがオフになりました -> ダークモード解除');
+      htmlElement.removeAttribute('data-theme');
+    }
   });
 
 });
+
+
+
 
 
