@@ -71,7 +71,13 @@ app.on('window-all-closed', () => {
 
 // 'recording:start' リクエストの処理
 ipcMain.handle('recording:start', async (event, settings) => {
-  console.log('Main受信: 録画開始リクエスト. 設定:', settings);
+  // 受け取った設定を加工します。保存先はアプリケーションのプロジェクトルートの
+  // screenshot フォルダで固定します。
+  settings = settings || {};
+  // プロジェクトルートの screenshot フォルダに固定
+  const fixedSavePath = path.join(__dirname, '..', 'screenshot');
+  settings.savePath = fixedSavePath;
+  console.log('Main受信: 録画開始リクエスト.　:', settings);
   try {
     const response = await axios.post('http://127.0.0.1:5001/start', settings);
     return response.data; // サーバーからの応答をフロントエンドに返す
