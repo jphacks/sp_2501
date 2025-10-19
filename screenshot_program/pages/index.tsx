@@ -677,13 +677,8 @@ export default function Home() {
         </header>
 
         <div className="container">
-<<<<<<< HEAD
           <div className="grid" style={{ display: 'flex', gap: 20 }}>
             {/* 左カラム */}
-=======
-          <div className="grid" style={{ display: 'flex', gap: 20, maxWidth: '1900px', margin: '0 auto' }}>
-
->>>>>>> 3e560c23137fdf0e4f7feb95c5d69a93f4db3bbd
             <div className="col-left" style={{ flex: '0 0 68%' }}>
               <section className="card" style={{ minHeight: 900 }}>
                 <div className="yoko yoko-left">
