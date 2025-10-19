@@ -265,6 +265,45 @@ ipcMain.handle('screenshots:stats', async () => {
   }
 })
 
+// debug: indicate handlers registered
+try { console.debug('IPC handler registered: screenshots:stats') } catch(e) {}
+
+// 'screenshots:list' - return latest 4 PNGs from screenshot folder as data URLs (newest first)
+ipcMain.handle('screenshots:list', async () => {
+  try {
+    const screenshotDir = path.join(__dirname, '..', 'screenshot')
+    try { if (!fs.existsSync(screenshotDir)) fs.mkdirSync(screenshotDir, { recursive: true }) } catch(e) {}
+    const all = await fsp.readdir(screenshotDir)
+    const pngs = []
+    for (const fn of all) {
+      const full = path.join(screenshotDir, fn)
+      try {
+        const stat = await fsp.stat(full)
+        if (stat.isFile() && fn.toLowerCase().endsWith('.png')) {
+          pngs.push({ path: full, mtime: stat.mtime.getTime() })
+        }
+      } catch(e) {}
+    }
+    // sort by mtime desc and take latest 4
+    pngs.sort((a,b) => b.mtime - a.mtime)
+    const latest = pngs.slice(0,4)
+    const results = []
+    for (const item of latest) {
+      try {
+        const buf = await fsp.readFile(item.path)
+        const b64 = buf.toString('base64')
+        results.push(`data:image/png;base64,${b64}`)
+      } catch(e) {}
+    }
+    return results
+  } catch (err) {
+    console.error('screenshots:list error', err)
+    return []
+  }
+})
+
+try { console.debug('IPC handler registered: screenshots:list') } catch(e) {}
+
 // 파일 변경 감시 (userPath 및 bundlePath) — 앱 준비 후에 watcher 시작
 function startSettingsWatcher(win) {
   try {

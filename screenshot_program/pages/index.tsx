@@ -31,6 +31,7 @@ type PersonalSettings = {
       writeSettings: (obj: Partial<PersonalSettings & { savePath?: string }>) => Promise<{ ok: boolean; error?: string }>
       // optional stats helper exposed by preload: { totalShots, totalSize, deletedCount }
       getScreenshotStats?: () => Promise<{ totalShots: number; totalSize: number; deletedCount: number }>
+      listScreenshots?: () => Promise<string[]>
       onSettingsChanged: (cb: (data: any) => void) => () => void
       closeWindow?: () => Promise<any>
     }
@@ -41,7 +42,7 @@ export default function Home() {
   const { data: session, status } = useSession()
 
   // 분 단위 인터벌로 동작
-  const [intervalMin, setIntervalMin] = useState<number>(1)
+  const [intervalMin, setIntervalMin] = useState<number>(5) // value is in seconds
   const [resolution, setResolution] = useState<string>('1.0')
   const [statusText, setStatusText] = useState<string>('待機中...')
   const [isRecording, setIsRecording] = useState<boolean>(false)
@@ -81,6 +82,9 @@ export default function Home() {
       return JSON.parse(raw || '[]')
     } catch (e) { return [] }
   })
+
+  // preview images from local screenshot folder (data URLs). Show latest 4.
+  const [previewImages, setPreviewImages] = useState<string[]>([])
 
   // activity list display height is fixed to 200px (no user input)
   const FIXED_ACTIVITY_LOG_HEIGHT = 200
@@ -304,6 +308,25 @@ export default function Home() {
     }
   }, [])
 
+  // load preview images from preload API (if available)
+  useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      try {
+        if (typeof window !== 'undefined' && window.api?.listScreenshots) {
+          const imgs = await window.api.listScreenshots()
+          if (!mounted) return
+          if (Array.isArray(imgs)) {
+            setPreviewImages(imgs.slice(0, 4))
+          }
+        }
+      } catch (e) {
+        // ignore
+      }
+    })()
+    return () => { mounted = false }
+  }, [totalShots])
+
   // 다크 토글 동기화: 글로벌과 우측 토글 서로 상태 반영
   useEffect(() => {
     const syncToggles = () => {
@@ -468,15 +491,17 @@ export default function Home() {
         <div className="container">
           <div className="grid" style={{ display: 'flex', gap: 20 }}>
             <div className="col-left" style={{ flex: '0 0 68%' }}>
-              <section className="card">
+              <section className="card" style={{ minHeight: 900 }}>
             <h3>自動スクリーンショット設定</h3>
             <div className="form-row">
-              <label htmlFor="interval">キャプチャ制御の撮影間隔（分）:</label>
+              <label htmlFor="interval">キャプチャ制御の撮影間隔（秒）:</label>
               <select id="interval" value={intervalMin} onChange={(e) => setIntervalMin(Number(e.target.value))}>
-                <option value={1}>1分</option>
-                <option value={2}>2分</option>
-                <option value={3}>3分</option>
-                <option value={5}>5分</option>
+                <option value={5}>5秒</option>
+                <option value={15}>15秒</option>
+                <option value={30}>30秒</option>
+                <option value={60}>1分</option>
+                <option value={180}>3分</option>
+                <option value={300}>5分</option>
               </select>
             </div>
 
@@ -534,10 +559,14 @@ export default function Home() {
 
               <div className="input-container" style={{ marginTop: 12 }}>
                 <div id="isCapturing">
-                  {/* 이미지 프리뷰(샘플) - 실제로는 스크린샷 폴더의 이미지로 대체 가능 */}
-                  {Array.from({ length: Math.min(6, totalShots || 0) }).map((_, i) => (
-                    <img key={i} width={100} height={80} src={`https://via.placeholder.com/100x80?text=img${i+1}`} alt={`shot-${i}`} style={{ marginRight: 6 }} />
-                  ))}
+                  {/* 실제 스크린샷 미리보기: preload가 data URLs 배열을 반환하도록 구현됨 */}
+                  {previewImages.length > 0 ? (
+                    previewImages.map((d, i) => (
+                      <img key={i} width={100} height={80} src={d} alt={`shot-${i}`} style={{ marginRight: 6 }} />
+                    ))
+                  ) : (
+                    <div style={{ color: '#888' }}>スクリーンショットがまだありません</div>
+                  )}
                 </div>
               </div>
 
@@ -615,11 +644,10 @@ export default function Home() {
                       <input type="text" id="reportTitle" className="input" placeholder="例: 作業記録 2024-01-15" />
                     </div>
 
-                    <div className="checkbox-group">
-                      <label className="checkbox-label"><input type="checkbox" id="includeImages" defaultChecked /> <span>画像を含める</span></label>
-                      <label className="checkbox-label"><input type="checkbox" id="includeTimestamps" defaultChecked /> <span>タイムスタンプを含める</span></label>
-                      <label className="checkbox-label"><input type="checkbox" id="includeSummary" defaultChecked /> <span>AI要約を含める</span></label>
-                    </div>
+                      <div className="checkbox-group">
+                        <label className="checkbox-label"><input type="checkbox" id="includeTimestamps" defaultChecked /> <span>タイムスタンプを含める</span></label>
+                        <label className="checkbox-label"><input type="checkbox" id="includeSummary" defaultChecked /> <span>AI要約を含める</span></label>
+                      </div>
 
                     <button className="btn btn-primary btn-large btn-full" id="generateReportBtn">レポート生成</button>
                   </div>

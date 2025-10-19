@@ -11,7 +11,22 @@ contextBridge.exposeInMainWorld('api', {
   readSettings: () => ipcRenderer.invoke('settings:read'),
   writeSettings: (obj) => ipcRenderer.invoke('settings:write', obj),
   // 스크린샷 통계 요청
-  getScreenshotStats: () => ipcRenderer.invoke('screenshots:stats'),
+  getScreenshotStats: async () => {
+    try {
+      return await ipcRenderer.invoke('screenshots:stats')
+    } catch (e) {
+      // no handler registered or other error -> return safe defaults
+      return { totalShots: 0, totalSize: 0, deletedCount: 0 }
+    }
+  },
+  // return array of data URLs (latest PNGs, newest first)
+  listScreenshots: async () => {
+    try {
+      return await ipcRenderer.invoke('screenshots:list')
+    } catch (e) {
+      return []
+    }
+  },
   // 파일 변경 알림 수신기 등록
   onSettingsChanged: (cb) => {
     const listener = (event, data) => cb(data)
