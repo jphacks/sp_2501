@@ -529,26 +529,30 @@ export default function Home() {
                   </div>
 
                   <div className="form-group controls-row" style={{ display: 'flex', gap: 12 }}>
-                    {/* 통합된 메인 버튼: 녹화개시 / 일시정지 / 녹화재개 */}
+                    {/* 단일 토글 버튼: 녹화개시 <-> 녹화정지 */}
                     <button
-                      onClick={() => {
+                      onClick={async () => {
                         try {
                           if (!isRecording) {
-                            handleStart()
+                            await handleStart()
                           } else {
-                            // 녹화 중이거나 일시정지 상태에서 토글
-                            handlePauseOrResume()
+                            await handleStop()
                           }
                         } catch (e) { console.error(e) }
                       }}
-                      className={`control-btn start-btn ${isRecording && !isPaused ? 'paused' : ''} ${isRecording && isPaused ? 'resume' : ''}`}
-                      style={{ flex: '1 1 60%' }}
+                      className={`control-btn start-stop-btn ${isRecording ? 'recording' : 'idle'}`}
+                      style={{
+                        flex: '1 1 100%',
+                        padding: '10px 16px',
+                        fontSize: 16,
+                        color: '#fff',
+                        backgroundColor: isRecording ? '#c4302b' : '#2e9b2e',
+                        border: 'none',
+                        borderRadius: 6,
+                      }}
                     >
-                      {!isRecording ? '録画開始' : (!isPaused ? '一時停止' : '録画再開')}
+                      {!isRecording ? '録画開始' : '録画停止'}
                     </button>
-
-                    {/* 녹화중지 버튼 (항상 별도) */}
-                    <button onClick={handleStop} disabled={!isRecording} className="control-btn stop-btn" style={{ flex: '1 1 40%' }}>録画中止</button>
                   </div>
                   
                   <div className="stats-grid" style={{ marginTop: 12, display: 'flex', gap: 12 }}>
