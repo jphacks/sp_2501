@@ -58,6 +58,7 @@ body {
 	line-height: 1.6;
 	min-height: 100vh;
 	transition: all 0.3s;
+	padding-top: 80px; /* ヘッダーの高さに応じて調整 */
 }
 
 /* Container */
@@ -73,6 +74,9 @@ body {
   border-bottom: 1px solid var(--border);
   padding: 1rem 0;
   transition: all 0.3s;
+  position: fixed; /* ヘッダーを固定 */
+  width: 100%;
+  top: 0;
 }
 
 .header-content {

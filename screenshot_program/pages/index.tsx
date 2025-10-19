@@ -629,7 +629,7 @@ export default function Home() {
             <div className="col-right" style={{ flex: '1 1 32%' }}>
               
 
-              <section className="card yoko" style={{ marginTop: 12 }}>
+              <section className="card yoko">
                 <div className="card-header"><h4>レポート生成</h4></div>
                 <div className="card-content">
                   <div className="report-section">
@@ -667,7 +667,7 @@ export default function Home() {
                 </div>
               </section>
 
-              <section className="card" style={{ marginTop: 12 }}>
+              <section className="card">
                 <div className="card-header"><h4>過去のレポート</h4></div>
                 <div className="card-content">
                   <div className="report-list" id="reportList"></div>
