@@ -40,3 +40,4 @@ npm run package:electron
 ```
 
 (You may need to configure additional settings for code signing on macOS.)
+

@@ -490,73 +490,83 @@ export default function Home() {
 
         <div className="container">
           <div className="grid" style={{ display: 'flex', gap: 20 }}>
+
             <div className="col-left" style={{ flex: '0 0 68%' }}>
               <section className="card" style={{ minHeight: 900 }}>
-            <h3>自動スクリーンショット設定</h3>
-            <div className="form-row">
-              <label htmlFor="interval">キャプチャ制御の撮影間隔（秒）:</label>
-              <select id="interval" value={intervalMin} onChange={(e) => setIntervalMin(Number(e.target.value))}>
-                <option value={5}>5秒</option>
-                <option value={15}>15秒</option>
-                <option value={30}>30秒</option>
-                <option value={60}>1分</option>
-                <option value={180}>3分</option>
-                <option value={300}>5分</option>
-              </select>
-            </div>
 
-            <div className="form-row">
-              <label htmlFor="resolution">解像度スケール:</label>
-              <select id="resolution" value={resolution} onChange={(e) => setResolution(e.target.value)}>
-                <option value="1.0">100% (フル解像度)</option>
-                <option value="0.75">75%</option>
-                <option value="0.5">50%</option>
-              </select>
-            </div>
+                <div className="yoko yoko-left">
+                  <div className="card-header">
+                    <h3>自動スクリーンショット設定</h3><h2 className="card-title" id="capture_seigyo"></h2>
+                  </div>
+              <div className="card-content">
+                <div className="control-section">
 
-            <div className="form-row">
-              <label>保存先パス:</label>
-              <input type="text" value={fixedSavePath} readOnly />
-            </div>
 
-            <div className="form-row controls-row" style={{ display: 'flex', gap: 12 }}>
-              {/* 통합된 메인 버튼: 녹화개시 / 일시정지 / 녹화재개 */}
-              <button
-                onClick={() => {
-                  try {
-                    if (!isRecording) {
-                      handleStart()
-                    } else {
-                      // 녹화 중이거나 일시정지 상태에서 토글
-                      handlePauseOrResume()
-                    }
-                  } catch (e) { console.error(e) }
-                }}
-                className={`control-btn start-btn ${isRecording && !isPaused ? 'paused' : ''} ${isRecording && isPaused ? 'resume' : ''}`}
-                style={{ flex: '1 1 60%' }}
-              >
-                {!isRecording ? '録画開始' : (!isPaused ? '一時停止' : '録画再開')}
-              </button>
+                  <div className="form-group">
+                    <label htmlFor="interval">キャプチャ制御の撮影間隔（秒）:</label>
+                    <select className="select" id="interval" value={intervalMin} onChange={(e) => setIntervalMin(Number(e.target.value))}>
+                      <option value={5}>5秒</option>
+                      <option value={15}>15秒</option>
+                      <option value={30}>30秒</option>
+                      <option value={60}>1分</option>
+                      <option value={180}>3分</option>
+                      <option value={300}>5分</option>
+                    </select>
+                  </div>
 
-              {/* 녹화중지 버튼 (항상 별도) */}
-              <button onClick={handleStop} disabled={!isRecording} className="control-btn stop-btn" style={{ flex: '1 1 40%' }}>録画中止</button>
-            </div>
-            
-              <div className="stats-grid" style={{ marginTop: 12, display: 'flex', gap: 12 }}>
-                <div className="stat-card" style={{ flex: 1 }}>
-                  <div className="stat-label">合計撮影枚数</div>
-                  <div className="stat-value" id="captureCount">{totalShots}</div>
+                  <div className="form-group">
+                    <label htmlFor="resolution">解像度スケール:</label>
+                    <select className="select" id="resolution" value={resolution} onChange={(e) => setResolution(e.target.value)}>
+                      <option value="1.0">100% (フル解像度)</option>
+                      <option value="0.75">75%</option>
+                      <option value="0.5">50%</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label>保存先パス:</label>
+                    <input className="select" type="text" value={fixedSavePath} readOnly />
+                  </div>
+
+                  <div className="form-group controls-row" style={{ display: 'flex', gap: 12 }}>
+                    {/* 통합된 메인 버튼: 녹화개시 / 일시정지 / 녹화재개 */}
+                    <button
+                      onClick={() => {
+                        try {
+                          if (!isRecording) {
+                            handleStart()
+                          } else {
+                            // 녹화 중이거나 일시정지 상태에서 토글
+                            handlePauseOrResume()
+                          }
+                        } catch (e) { console.error(e) }
+                      }}
+                      className={`control-btn start-btn ${isRecording && !isPaused ? 'paused' : ''} ${isRecording && isPaused ? 'resume' : ''}`}
+                      style={{ flex: '1 1 60%' }}
+                    >
+                      {!isRecording ? '録画開始' : (!isPaused ? '一時停止' : '録画再開')}
+                    </button>
+
+                    {/* 녹화중지 버튼 (항상 별도) */}
+                    <button onClick={handleStop} disabled={!isRecording} className="control-btn stop-btn" style={{ flex: '1 1 40%' }}>録画中止</button>
+                  </div>
+                  
+                  <div className="stats-grid" style={{ marginTop: 12, display: 'flex', gap: 12 }}>
+                    <div className="stat-card" style={{ flex: 1 }}>
+                      <div className="stat-label">合計撮影枚数</div>
+                      <div className="stat-value" id="captureCount">{totalShots}</div>
+                    </div>
+                    <div className="stat-card" style={{ flex: 1 }}>
+                      <div className="stat-label">合計写真サイズ</div>
+                      <div className="stat-value" id="analyzedCount">{totalSize}</div>
+                    </div>
+                    <div className="stat-card" style={{ flex: 1 }}>
+                      <div className="stat-label">削除済み</div>
+                      <div className="stat-value" id="deletedCount">{deletedCount}</div>
+                    </div>
+                  </div>
                 </div>
-                <div className="stat-card" style={{ flex: 1 }}>
-                  <div className="stat-label">合計写真サイズ</div>
-                  <div className="stat-value" id="analyzedCount">{totalSize}</div>
                 </div>
-                <div className="stat-card" style={{ flex: 1 }}>
-                  <div className="stat-label">削除済み</div>
-                  <div className="stat-value" id="deletedCount">{deletedCount}</div>
-                </div>
-              </div>
-
               <div className="input-container" style={{ marginTop: 12 }}>
                 <div id="isCapturing">
                   {/* 실제 스크린샷 미리보기: preload가 data URLs 배열을 반환하도록 구현됨 */}
@@ -569,13 +579,9 @@ export default function Home() {
                   )}
                 </div>
               </div>
-
-            </section>
-
             </div>
 
-            <div className="col-right" style={{ flex: '1 1 32%' }}>
-              <section className="card">
+            <div className='yoko yoko-right'>
                   <div className="card-header"><h4>処理状況</h4></div>
                   <div className="card-content">
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, whiteSpace: 'nowrap' }}>
@@ -614,9 +620,16 @@ export default function Home() {
                     </label>
                   </div>
                 </div>
-              </section>
+              </div>
 
-              <section className="card yoko" style={{ marginTop: 12 }}>
+            </section>
+
+            </div>
+
+            <div className="col-right" style={{ flex: '1 1 32%' }}>
+              
+
+              <section className="card yoko">
                 <div className="card-header"><h4>レポート生成</h4></div>
                 <div className="card-content">
                   <div className="report-section">
@@ -654,7 +667,7 @@ export default function Home() {
                 </div>
               </section>
 
-              <section className="card" style={{ marginTop: 12 }}>
+              <section className="card">
                 <div className="card-header"><h4>過去のレポート</h4></div>
                 <div className="card-content">
                   <div className="report-list" id="reportList"></div>
