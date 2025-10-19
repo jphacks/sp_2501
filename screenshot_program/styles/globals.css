@@ -63,7 +63,7 @@ body {
 
 /* Container */
 .container {
-	max-width: 1400px;
+	max-width: 1500px;
 	margin: 0 auto;
 	padding: 0 1rem;
 }
@@ -181,8 +181,8 @@ body {
 }
 
 .yoko { flex:1; display:flex; flex-direction:column }
-.yoko-left { flex:7.5 }
-.yoko-right { flex:2.5 }
+.yoko-left { flex:6 }
+.yoko-right { flex:4 }
 
 .card-header { padding:1.25rem; display:flex; align-items:center; justify-content:space-between }
 .card-title { font-size:1.125rem; font-weight:600; color:var(--foreground) }
@@ -780,20 +780,21 @@ main {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.1rem;
   transition: all 0.3s;
 }
 
 .activity-item {
   display: flex;
-  gap: 0.75rem;
+  gap: 0.3rem;
   font-size: 0.8125rem;
-  padding: 0.5rem;
+  padding: 0.2rem;
   background-color: var(--background);
   border-radius: var(--radius);
   transition: all 0.3s;
+  flex-direction: column;
+  
 }
-
 .activity-time {
   color: var(--muted-foreground);
   font-family: monospace;
