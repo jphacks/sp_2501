@@ -1,6 +1,14 @@
 # processlog
 
-[![IMAGE ALT TEXT HERE](https://raw.githubusercontent.com/jphacks/sp_2501/refs/heads/main/sampleImage.png)
+ローカル環境のプログラムのUIや通信、参照などはvercelサーバーを利用しています。
+機能が利用できない観覧用vercel apiサーバー(ログイン時、DBに情報が登録されます。)
+
+https://process-log.vercel.app/
+
+現在一部のバグに修正が必要なアルファバージョンをPre-releaseとして公開しています。
+気になる方はどうぞ : https://github.com/jphacks/sp_2501/releases/tag/AlphaVersion
+
+![IMAGE ALT TEXT HERE](https://raw.githubusercontent.com/jphacks/sp_2501/refs/heads/main/sampleImage.png)
 [![Video Label](http://img.youtube.com/vi/w3tBt64taQU/0.jpg)](https://youtu.be/w3tBt64taQU)
 ## 製品概要
 `ProcessLog`は、PC上の活動を自動的に記録し、可視化・要約することで、日々のクリエイティブ制作や業務の振り返りを支援するシステムです。デスクトップアプリケーションが定期的にスクリーンショットを撮影し、Webアプリケーションがその情報を分析・整理します。
