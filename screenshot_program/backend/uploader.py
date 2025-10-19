@@ -11,6 +11,8 @@ import shutil # ファイル移動のためのライブラリ
 # (backendフォルダの親フォルダ(プロジェクトルート) + 'screenshot')
 REPO_ROOT = os.path.dirname(os.path.dirname(__file__))
 SCREENSHOT_DIR = os.path.join(REPO_ROOT, 'screenshot')
+# optional runtime config file that can control DELETE_AFTER_UPLOAD
+UPLOADER_CONFIG = os.path.join(REPO_ROOT, 'uploader_config.json')
 
 # ★★★ 送信するVercel APIのURLを入力してください。 ★★★
 request_URL = "process-log.vercel.app" # 例: 'myapp.vercel.app'
@@ -77,6 +79,20 @@ def job():
     """
     print(f"フォルダ確認中: {SCREENSHOT_DIR}")
     
+    # job 시작 시 runtime config를 읽어 DELETE_AFTER_UPLOAD를 동적으로 설정
+    try:
+        import json
+        if os.path.exists(UPLOADER_CONFIG):
+            try:
+                with open(UPLOADER_CONFIG, 'r', encoding='utf-8') as f:
+                    cfg = json.load(f)
+                    if 'deleteAfterUpload' in cfg:
+                        DELETE_AFTER_UPLOAD = bool(cfg.get('deleteAfterUpload'))
+            except Exception as e:
+                print('uploader config read error:', e)
+    except Exception:
+        pass
+
     # フォルダ準備 (job内で毎回チェック)
     try:
         os.makedirs(SCREENSHOT_DIR, exist_ok=True)

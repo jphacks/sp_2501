@@ -29,7 +29,7 @@ const isDeveloperModeEnabled = process.env.SUMMARY_DEVELOPER_MODE === 'true';
 
 const developerLog = (...args: unknown[]) => {
   if (isDeveloperModeEnabled) {
-    console.log('[summary/dev]', ...args);
+    // debug log removed
   }
 };
 

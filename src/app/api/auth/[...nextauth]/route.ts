@@ -13,7 +13,7 @@ declare global {
 const prisma = global.prisma ?? new PrismaClient()
 if (process.env.NODE_ENV !== "production") global.prisma = prisma
 
-const authOptions: NextAuthOptions = {
+export const authOptions: NextAuthOptions = {
   // Prisma Adapter 설정 (기본 사용법)
   adapter: PrismaAdapter(prisma),
 

@@ -17,20 +17,21 @@ function createPythonProcess() {
 
   // Pythonスクリプトの標準出力(print)をコンソールに出力
   pythonProcess.stdout.on('data', (data) => {
-    console.log(`Python出力: ${data}`);
+    // python stdout suppressed in release; keep for future debug if needed
   });
 
   // 【重要】Pythonスクリプトのエラー出力をコンソールに出力
   pythonProcess.stderr.on('data', (data) => {
+    // still surface stderr as errors
     console.error(`Pythonエラー: ${data}`);
   });
 
   // Pythonプロセスが終了した際の処理
   pythonProcess.on('close', (code) => {
-    console.log(`Pythonプロセスが終了しました。終了コード: ${code}`);
+    // suppressed
   });
   uploadProcess.on('close', (code) => {
-    console.log(`Uploaderプロセスが終了しました。終了コード: ${code}`);
+    // suppressed
   });
 }
 
@@ -107,27 +108,43 @@ ipcMain.handle('recording:start', async (event, settings) => {
   // プロジェクトルートの screenshot フォルダに固定
   const fixedSavePath = path.join(__dirname, '..', 'screenshot');
   settings.savePath = fixedSavePath;
-  console.log('Main受信: 録画開始リクエスト.　:', settings);
+  // debug log removed
   try {
     const response = await axios.post('http://127.0.0.1:5001/start', settings);
     return response.data; // サーバーからの応答をフロントエンドに返す
   } catch (error) {
-    console.error('Pythonサーバー(/start)との通信エラー:', error.message);
+  console.error('Pythonサーバー(/start)との通信エラー:', error.message);
     return { status: 'error', message: 'バックエンドサーバーとの通信に失敗しました。' };
   }
 });
 
 // 'recording:stop' リクエストの処理
 ipcMain.handle('recording:stop', async (event) => {
-  console.log('Main受信: 録画停止リクエスト');
+  // debug log removed
   try {
     const response = await axios.post('http://127.0.0.1:5001/stop');
     return response.data; // サーバーからの応答をフロントエンドに返す
   } catch (error) {
-    console.error('Pythonサーバー(/stop)との通信エラー:', error.message);
+  console.error('Pythonサーバー(/stop)との通信エラー:', error.message);
     return { status: 'error', message: 'バックエンドサーバーとの通信に失敗しました。' };
   }
 });
+
+// ウィンドウを閉じるハンドラ（preload経由で呼ばれる）
+ipcMain.handle('window:close', async (event) => {
+  try {
+    const senderWC = event.sender
+    const win = BrowserWindow.fromWebContents(senderWC)
+    if (win && !win.isDestroyed()) {
+      win.close()
+      return { ok: true }
+    }
+    return { ok: false, error: 'window not found' }
+  } catch (err) {
+    console.error('window:close error', err)
+    return { ok: false, error: String(err) }
+  }
+})
 
 // Helper: user settings path (in userData) and bundle default path (public)
 function getSettingsPaths() {
@@ -184,10 +201,67 @@ ipcMain.handle('settings:write', async (event, obj) => {
     }
     const toWrite = Object.assign({}, defaultSettings, obj || {})
     await fsp.writeFile(userPath, JSON.stringify(toWrite, null, 2), 'utf8')
+    // repository root uploader_config (for uploader.py) - optional
+    try {
+      const repoRoot = path.join(__dirname, '..')
+      const uploaderCfgPath = path.join(repoRoot, 'uploader_config.json')
+      if (typeof obj?.deleteAfterUpload !== 'undefined') {
+        const cfg = { deleteAfterUpload: !!obj.deleteAfterUpload }
+        await fsp.writeFile(uploaderCfgPath, JSON.stringify(cfg, null, 2), 'utf8')
+      }
+    } catch (e) {
+      console.error('write uploader_config error', e)
+    }
     return { ok: true }
   } catch (err) {
     console.error('settings:write error', err)
     return { ok: false, error: String(err) }
+  }
+})
+
+// 'screenshots:stats' - screenshot 폴더와 screenshot/uploaded 폴더의 통계를 계산해서 반환
+ipcMain.handle('screenshots:stats', async () => {
+  try {
+    const screenshotDir = path.join(__dirname, '..', 'screenshot')
+    const uploadedDir = path.join(screenshotDir, 'uploaded')
+    // ensure dirs exist
+    try { if (!fs.existsSync(screenshotDir)) fs.mkdirSync(screenshotDir, { recursive: true }) } catch(e) {}
+    try { if (!fs.existsSync(uploadedDir)) fs.mkdirSync(uploadedDir, { recursive: true }) } catch(e) {}
+
+    // collect png files in screenshotDir (exclude uploaded)
+    const all = await fsp.readdir(screenshotDir)
+    let totalShots = 0
+    let totalSize = 0
+    for (const fn of all) {
+      const full = path.join(screenshotDir, fn)
+      try {
+        const stat = await fsp.stat(full)
+        if (stat.isFile() && fn.toLowerCase().endsWith('.png')) {
+          totalShots += 1
+          totalSize += stat.size
+        }
+      } catch(e) { /* ignore */ }
+    }
+
+    // uploaded folder count and size
+    let deletedCount = 0
+    try {
+      const upFiles = await fsp.readdir(uploadedDir)
+      for (const fn of upFiles) {
+        const full = path.join(uploadedDir, fn)
+        try {
+          const stat = await fsp.stat(full)
+          if (stat.isFile() && fn.toLowerCase().endsWith('.png')) {
+            deletedCount += 1
+          }
+        } catch(e) {}
+      }
+    } catch(e) { /* ignore */ }
+
+    return { totalShots, totalSize, deletedCount }
+  } catch (err) {
+    console.error('screenshots:stats error', err)
+    return { totalShots: 0, totalSize: 0, deletedCount: 0 }
   }
 })
 

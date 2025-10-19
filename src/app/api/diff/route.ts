@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
+import { PrismaClient } from '@prisma/client';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../auth/[...nextauth]/route';
 
 // --- OpenAI API 設定 ---
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
@@ -98,6 +101,15 @@ function parseDataURI(dataURI: string): { buffer: Buffer; mimeType: string } {
 
   return { buffer, mimeType };
 }
+
+// PrismaClient 싱글톤
+declare global {
+  // eslint-disable-next-line no-var
+  var prisma: PrismaClient | undefined
+}
+
+const prisma = global.prisma ?? new PrismaClient()
+if (process.env.NODE_ENV !== 'production') global.prisma = prisma
 
 // スクリーンショットを OpenAI API に送って解析する
 async function analyzeScreenshotWithOpenAI(
@@ -277,7 +289,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       );
     }
 
-    console.log(`Received ${screenshots.length} screenshots.`);
+  // debug log removed
     developerLog(
       'Screenshot filenames',
       screenshots.map((shot) => shot.filename)
@@ -289,18 +301,105 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
     for (const shot of screenshots) {
       const { filename, data } = shot;
 
-      const { buffer } = parseDataURI(data);
+  const { buffer } = parseDataURI(data);
 
-      const tempDir = os.tmpdir();
-      const tempFilePath = path.join(tempDir, filename);
-      fs.writeFileSync(tempFilePath, buffer);
+  const tempDir = os.tmpdir();
+  const tempFilePath = path.join(tempDir, filename);
+  // use async write to satisfy types (cast Buffer to Uint8Array)
+  await fs.promises.writeFile(tempFilePath, buffer as unknown as Uint8Array);
 
-      processedFiles.push({ filename, size: buffer.length });
-      console.log(`Stored temporary file: ${tempFilePath}`);
+  processedFiles.push({ filename, size: buffer.length });
+  // debug log removed
 
       try {
         const analysis = await analyzeScreenshotWithOpenAI(apiKey, shot);
         analysisResults.push({ filename, analysis });
+        // --- DB 저장 로직: 로그인한 유저의 오늘 기록에 추가 ---
+        try {
+          // 1) 우선 NextAuth의 getServerSession을 사용해서 세션을 얻어본다.
+          //    (실환경/런타임 차이로 동작하지 않으면 아래 쿠키 기반 폴백으로 넘어간다.)
+          let dbUser: any | null = null
+
+          try {
+            const serverSession: any = await getServerSession(authOptions as any)
+            // 가능한 경우 id와 email 둘다 확인하여 더 정확히 사용자 매핑
+            if (serverSession?.user) {
+              if (serverSession.user.id) {
+                dbUser = await prisma.user.findUnique({ where: { id: serverSession.user.id } })
+              }
+              if (!dbUser && serverSession.user.email) {
+                dbUser = await prisma.user.findUnique({ where: { email: serverSession.user.email } })
+              }
+            }
+          } catch (e) {
+            // getServerSession 호출이 어떤 환경에서 실패할 수 있으므로 디버그 로그만 남기고 폴백 처리
+            developerLog('getServerSession failed, will fallback to cookie lookup', { err: (e as Error).message })
+          }
+
+          // 2) getServerSession 으로 못찾았으면 기존 쿠키->session 테이블 조회 방식 폴백
+          if (!dbUser) {
+            const cookieNames = ['__Secure-next-auth.session-token', 'next-auth.session-token', 'next-auth.session-token']
+            let tokenValue: string | undefined
+            for (const name of cookieNames) {
+              const c = request.cookies.get(name)
+              if (c && c.value) {
+                tokenValue = c.value
+                break
+              }
+            }
+
+            if (tokenValue) {
+              const dbSession = await prisma.session.findUnique({ where: { sessionToken: tokenValue }, include: { user: true } })
+              if (dbSession && dbSession.user) dbUser = dbSession.user
+            }
+          }
+
+          // 3) dbUser가 있으면 오늘 날짜 레코드를 만들거나 업데이트하여 배열에 누적 저장
+          if (dbUser) {
+            const { userSystemId } = dbUser
+            const today = new Date()
+            const yyyy = today.getFullYear()
+            const mm = String(today.getMonth() + 1).padStart(2, '0')
+            const dd = String(today.getDate()).padStart(2, '0')
+            // Prisma Date 타입(날짜만)으로 저장하기 위해 yyyy-mm-dd 형식 사용
+            const dateOnly = new Date(`${yyyy}-${mm}-${dd}`)
+
+            const existing = await prisma.userTaskPersonalLog.findUnique({ where: { userSystemId_taskDateId: { userSystemId, taskDateId: dateOnly } } })
+
+            // 고유성 확보를 위해 Unix timestamp 사용
+            const timestamp = Date.now()
+            // 새 스키마: taskTempTxt는 배열로 누적 저장
+            const entry = { time: timestamp, filename, analysis }
+
+            if (existing) {
+              // 기존 값이 배열인지 확인하고 아니면 변환
+              let prevArray: any[] = []
+              if (existing.taskTempTxt) {
+                if (Array.isArray(existing.taskTempTxt)) prevArray = existing.taskTempTxt as any[]
+                else {
+                  // 이전에 객체 형태로 저장된 경우(호환성 유지): 변환하여 배열로 만든다.
+                  try {
+                    const asObj = existing.taskTempTxt as Record<string, unknown>
+                    prevArray = Object.keys(asObj).map((k) => ({ time: k, analysis: (asObj as any)[k] }))
+                  } catch (e) {
+                    prevArray = []
+                  }
+                }
+              }
+
+              prevArray.push(entry)
+
+              await prisma.userTaskPersonalLog.update({
+                where: { userSystemId_taskDateId: { userSystemId, taskDateId: dateOnly } },
+                data: { taskTempTxt: prevArray },
+              })
+            } else {
+              await prisma.userTaskPersonalLog.create({ data: { userSystemId, taskDateId: dateOnly, taskTempTxt: [entry] } })
+            }
+          }
+        } catch (dbErr) {
+          console.error('[diff] DB save error:', dbErr)
+        }
       } catch (error) {
         console.error(`[diff] OpenAI error (${filename}):`, error);
         analysisResults.push({

@@ -1,150 +1,232 @@
+/* Refering styles.css merged into globals.css */
+/* Reset and Base Styles */
 * {
 	margin: 0;
 	padding: 0;
 	box-sizing: border-box;
 }
 
+:root {
+	--background: #eeeeee;
+	--foreground: #333333;
+	--card: #ffffff;
+	--card-foreground: #333333;
+	--primary: #007bff;
+	--primary-foreground: #ffffff;
+	--secondary: #6c757d;
+	--secondary-foreground: #ffffff;
+	--muted: #6c757d;
+	--muted-foreground: #333333;
+	--accent: #6c757d;
+	--accent-foreground: #ffffff;
+	--destructive: #dc3545;
+	--destructive-foreground: #ffffff;
+	--border: #dee2e6;
+	--success: #28a745;
+	--info: #17a2b8;
+	--radius: 8px;
+	transition: all 0.3s;
+}
+
+/* 다크 모드: body.dark에 대해 변수 덮어쓰기 */
+body.dark {
+	--background: #333333;
+	--foreground: #ffffff;
+	--card: #444444;
+	--card-foreground: #ffffff;
+	--muted-foreground: #ffffff;
+	--border: #111111;
+	transition: all 0.3s;
+}
+
+/* Preserve compatibility with refering's data-theme dark selector */
+[data-theme="dark"] {
+	--background: #333333;
+	--foreground: #ffffff;
+	--card: #444444;
+	--card-foreground: #ffffff;
+	--muted-foreground: #ffffff;
+	--border: #111111;
+	transition: all 0.3s;
+}
+
+
 body {
-	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
-	background-color: #eeeeee;
-	display: flex;
-	justify-content: center;
-	align-items: center;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", sans-serif;
+	background-color: var(--background);
+	color: var(--foreground);
+	line-height: 1.6;
 	min-height: 100vh;
-	padding: 20px;
+	transition: all 0.3s;
 }
 
-.login-container {
-	background: white;
-	border-radius: 8px;
-	border: 1px solid #ddd;
-	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-	width: 100%;
-	max-width: 400px;
-	position: relative;
-	padding: 40px 30px;
+/* Container */
+.container {
+	max-width: 1400px;
+	margin: 0 auto;
+	padding: 0 1rem;
 }
 
-.close-button {
-	position: absolute;
-	top: 15px;
-	right: 15px;
-	background: none;
-	border: none;
-	font-size: 24px;
-	color: #666;
-	cursor: pointer;
-	width: 30px;
-	height: 30px;
+/* Header */
+.header {
+	background-color: var(--card);
+	border-bottom: 1px solid var(--border);
+	padding: 1rem 0;
+	transition: all 0.3s;
+}
+
+.header-content {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.header-left {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+}
+
+.header-right {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+}
+
+.logo {
+	width: 40px;
+	height: 40px;
+	background-color: var(--primary);
+	border-radius: var(--radius);
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	border-radius: 4px;
-	transition: all 0.2s;
 }
 
-.close-button:hover {
-	background-color: #f5f5f5;
-	color: #333;
+.logo-icon {
+	width: 24px;
+	height: 24px;
+	color: var(--primary-foreground);
 }
 
-.login-header {
-	text-align: center;
-	margin-bottom: 30px;
-}
-
-.login-header h1 {
-	font-size: 24px;
+.header-title h1 {
+	font-size: 1.25rem;
 	font-weight: 600;
-	color: #333;
-	margin-bottom: 8px;
+	color: var(--foreground);
+	transition: all 0.3s;
 }
 
-.login-header p {
-	font-size: 14px;
-	color: #666;
+.header-title p {
+	font-size: 0.875rem;
+	color: var(--muted-foreground);
+	transition: all 0.3s;
 }
 
-.google-login-button {
-	width: 100%;
-	padding: 12px 20px;
-	background-color: white;
-	border: 1px solid #ddd;
-	border-radius: 4px;
-	font-size: 16px;
-	font-weight: 500;
-	color: #333;
-	cursor: pointer;
+/* Main Content */
+.main-content {
+	padding: 1.5rem 0;
+}
+
+.grid {
+	display: grid;
+	grid-template-columns: 2fr 1fr;
+	gap: 1.5rem;
+}
+
+@media (max-width: 1000px) {
+	.grid { grid-template-columns: 1fr; }
+}
+
+.col-left, .col-right { display:flex; flex-direction:column; gap:1.5rem }
+
+/* Card */
+.card {
+	background-color: var(--card);
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+	overflow: hidden;
 	display: flex;
-	align-items: center;
-	justify-content: center;
-	gap: 12px;
-	transition: all 0.2s;
+	gap: 1.5rem;
+	transition: all 0.3s;
 }
 
-.google-login-button:hover {
-	background-color: #f8f9fa;
-	border-color: #ccc;
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
+.yoko { flex:1; display:flex; flex-direction:column }
+.yoko-left { flex:7.5 }
+.yoko-right { flex:2.5 }
 
-.google-login-button:active {
-	transform: translateY(1px);
-}
+.card-header { padding:1.25rem; display:flex; align-items:center; justify-content:space-between }
+.card-title { font-size:1.125rem; font-weight:600; color:var(--foreground) }
+.card-content { padding:1.25rem }
 
-.google-icon {
-	width: 20px;
-	height: 20px;
-}
+/* Buttons */
+.btn { display:inline-flex; align-items:center; justify-content:center; gap:0.5rem; padding:0.5rem 1rem; font-size:0.875rem; font-weight:500; border-radius:var(--radius); border:none; cursor:pointer; transition:all 0.2s }
+.btn:hover { opacity:0.9 }
+.btn-primary { background-color: var(--primary); color: var(--primary-foreground) }
+.btn-secondary { background-color: var(--secondary); color: var(--secondary-foreground); border: 1px solid var(--border) }
+.btn-destructive { background-color: var(--destructive); color: var(--destructive-foreground) }
+.btn-large { padding:0.75rem 1.5rem; font-size:1rem }
+.btn-full { width:100% }
 
-.divider {
-	margin: 25px 0;
-	text-align: center;
-	position: relative;
-}
+/* Stop button id fallback color */
+#btn-stop { background-color: #dc3545 }
 
-.divider::before {
-	content: '';
-	position: absolute;
-	top: 50%;
-	left: 0;
-	right: 0;
-	height: 1px;
-	background-color: #e0e0e0;
-}
+/* Form Elements */
+.form-group { margin-bottom:1rem }
+.form-group label { display:block; font-size:0.875rem; font-weight:500; color:var(--foreground); margin-bottom:0.5rem }
+.input, .select { width:100%; padding:0.5rem 0.75rem; font-size:0.875rem; background-color:var(--background); color:var(--foreground); border:1px solid var(--border); border-radius:var(--radius); outline:none }
+.input:focus, .select:focus { border-color: var(--primary) }
 
-.divider span {
-	background-color: white;
-	padding: 0 15px;
-	color: #999;
-	font-size: 13px;
-	position: relative;
-	z-index: 1;
-}
+/* Checkbox */
+.checkbox-group { display:flex; flex-direction:column; gap:0.75rem; margin-bottom:1rem }
+.checkbox-label { display:flex; align-items:center; gap:0.5rem; font-size:0.875rem; color:var(--foreground) }
+.checkbox-label input[type="checkbox"] { width:16px; height:16px }
 
-.info-text {
-	text-align: center;
-	font-size: 13px;
-	color: #666;
-	line-height: 1.5;
-	margin-top: 20px;
-}
+/* Stats Grid */
+.stats-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; margin-top:1.5rem; padding-bottom:20px; border-bottom: var(--card-foreground) 1px solid }
+.stat-card { background-color: var(--background); border:1px solid var(--border); border-radius: var(--radius); padding:0.4rem; text-align:center }
+.stat-label { font-size:1rem; color:var(--muted-foreground); text-transform:uppercase }
+.stat-value { font-size:1.875rem; font-weight:700; color:var(--primary) }
 
-.info-text a {
-	color: #007bff;
-	text-decoration: none;
-}
+/* Activity Log, gallery, report list, etc. (omitted for brevity) */
 
-.info-text a:hover {
-	text-decoration: underline;
-}
+/* Toggle switch */
+.toggle-switch { position: relative; display: inline-block; width: 51px; height: 31px; cursor: pointer }
+.toggle-switch input { opacity: 0; width:0; height:0 }
+.toggle-switch .slider { position:absolute; top:0; left:0; right:0; bottom:0; background-color:#e9e9eb; border-radius:34px; transition: background-color 0.2s }
+.toggle-switch .slider:before { position:absolute; content:""; height:27px; width:27px; left:2px; bottom:2px; background-color:white; border-radius:50%; box-shadow:0 1px 3px rgba(0,0,0,0.2); transition: transform 0.2s }
+.toggle-switch input:checked + .slider { background-color: #34c759 }
+.toggle-switch input:checked + .slider:before { transform: translateX(20px) }
 
-@media (max-width: 480px) {
-	.login-container {
-		padding: 30px 20px;
-	}
+/* AI 도트 */
+.ai-dots { display:none; gap:8px; margin-top:6px; align-items:center }
+.ai-dots .dot { width:8px; height:8px; border-radius:50%; background: var(--success); opacity:0.25 }
+.ai-dots.running { display:inline-flex }
+@keyframes ai-dot-blink { 0%{opacity:0.25} 20%{opacity:1} 40%{opacity:0.25} 100%{opacity:0.25} }
+.ai-dots.running .dot:nth-child(1) { animation: ai-dot-blink 0.9s infinite; animation-delay: 0s }
+.ai-dots.running .dot:nth-child(2) { animation: ai-dot-blink 0.9s infinite; animation-delay: 0.3s }
+.ai-dots.running .dot:nth-child(3) { animation: ai-dot-blink 0.9s infinite; animation-delay: 0.6s }
 
-	.login-header h1 {
-		font-size: 20px;
-	}
-}
+/* Report list styles (important) */
+.report-list { display:flex; flex-direction:column; gap:0.75rem; max-height:400px; overflow-y:auto }
+.report-list-item { background-color: var(--background); border:1px solid var(--border); border-radius: var(--radius); padding:1rem; cursor:pointer; display:flex; align-items:center; justify-content:space-between }
+.report-list-item:hover { transform: translateY(-2px); box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-color: var(--primary) }
+
+/* --- App-specific additions: login styles and recording button colors --- */
+.login-container { background: var(--card); border-radius:8px; border:1px solid var(--border); box-shadow:0 2px 8px rgba(0,0,0,0.06); width:100%; max-width:400px; position:relative; padding:40px 30px }
+.close-button { position:absolute; top:15px; right:15px; background:none; border:none; font-size:24px; color:var(--muted); cursor:pointer; width:30px; height:30px; display:flex; align-items:center; justify-content:center; border-radius:4px }
+.close-button:hover { background-color: rgba(0,0,0,0.04) }
+.login-header { text-align:center; margin-bottom:30px }
+.login-header h1 { font-size:24px; font-weight:600; color:var(--foreground); margin-bottom:8px }
+.login-header p { font-size:14px; color:var(--muted) }
+.google-login-button { width:100%; padding:12px 20px; background-color: var(--card); border:1px solid var(--border); border-radius:4px; font-size:16px; font-weight:500; color:var(--foreground); display:flex; align-items:center; justify-content:center; gap:12px }
+.google-login-button:hover { background-color: rgba(0,0,0,0.02) }
+
+/* Recording button colors (user requested) */
+.control-btn { padding:10px 12px; border-radius:6px; border:none; color:white; cursor:pointer }
+.start-btn { background: #2ecc71 } /* 녹화개시 - 초록 */
+.start-btn.paused { background: #3498db } /* 일시정지 - 파랑 */
+.start-btn.resume { background: #27ae60 } /* 재개 - 초록 강조 */
+.stop-btn { background: #a93226 } /* 정지 - 어두운 빨간색 */
+
+@media (max-width: 480px) { .login-container { padding: 30px 20px } .login-header h1 { font-size: 20px } }
+
