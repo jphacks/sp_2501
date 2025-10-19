@@ -1,5 +1,0 @@
-Flask
-mss
-Pillow
-requests
-schedule

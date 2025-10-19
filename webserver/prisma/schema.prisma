@@ -1,0 +1,83 @@
+// prisma/schema.prisma
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL") // Neon DB 接続文字列
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ----------------------------------------------
+// 1. 認証モデル (NextAuth.js 標準)
+// ----------------------------------------------
+
+model User {
+  id                String    @id @default(cuid())
+  name              String?
+  email             String?   @unique
+  emailVerified     DateTime?
+  image             String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  autoSummaryEnabled Boolean  @default(false)
+
+  // Relations
+  accounts          Account[]
+  sessions          Session[]
+  taskLogs          personalTaskLog[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ----------------------------------------------
+// 2. 핵심 데이터 모델 (이 프로젝트용)
+// ----------------------------------------------
+
+model personalTaskLog {
+  userId     String
+  taskDateId DateTime @db.Date // 日付 (YYYY-MM-DD)
+  taskTempTxt Json?
+  taskContent String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, taskDateId])
+  @@index([userId, taskDateId(sort: Desc)])
+}
