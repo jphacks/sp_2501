@@ -531,7 +531,7 @@ export default function Home() {
         </header>
 
         <div className="container">
-          <div className="grid" style={{ display: 'flex', gap: 20 }}>
+          <div className="grid" style={{ display: 'flex', gap: 20, maxWidth: '1900px', margin: '0 auto' }}>
 
             <div className="col-left" style={{ flex: '0 0 68%' }}>
               <section className="card" style={{ minHeight: 900 }}>

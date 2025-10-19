@@ -63,7 +63,7 @@ body {
 
 /* Container */
 .container {
-	max-width: 1500px;
+	max-width: 1900px;
 	margin: 0 auto;
 	padding: 0 1rem;
 }
@@ -181,9 +181,6 @@ body {
 	transition: all 0.3s;
 }
 
-.yoko { flex:1; display:flex; flex-direction:column }
-.yoko-left { flex:6 }
-.yoko-right { flex:4 }
 
 .card-header { padding:1.25rem; display:flex; align-items:center; justify-content:space-between }
 .card-title { font-size:1.125rem; font-weight:600; color:var(--foreground) }
@@ -318,7 +315,7 @@ body {
 
 /* Container */
 .container {
-  max-width: 1400px;
+  max-width: 1900px;
   margin: 0 auto;
   padding: 0 1rem;
 }
@@ -414,29 +411,18 @@ main {
   gap: 1.50rem;
 }
 
-/* Card */
-.card {
-  background-color: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  overflow: hidden;
-  display: flex; /* 子要素である .yoko を横並びにする */
-  gap: 1.5rem;   /* 横並びになった要素の間に余白を追加 */
-  transition: all 0.3s;
-}
 
 .yoko {
-  flex: 1; /* 利用可能なスペースを均等に分け合う (50%ずつの幅になる) */
   display: flex;
   flex-direction: column; /* yokoの中身は縦に並べる */
 }
 
 .yoko-left {
-  flex: 7.5; /* 全体の4割の幅を取る */
+  flex: 6.8; /* 全体の4割の幅を取る */
 }
 
 .yoko-right {
-  flex: 2.5; /* 全体の6割の幅を取る */
+  flex: 3.2; /* 全体の6割の幅を取る */
 }
 
 .card-header {
@@ -611,7 +597,7 @@ main {
 }
 
 .stat-label {
-  font-size: 1rem;
+  font-size: 0.8rem;
   color: var(--muted-foreground);
   text-transform: uppercase;
   letter-spacing: 0.05em;
