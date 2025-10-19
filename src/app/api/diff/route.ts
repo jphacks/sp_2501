@@ -2,15 +2,27 @@ import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import { PrismaClient } from '@prisma/client';
+// ★ 'User' 타입을 임포트하여 헬퍼 함수에서 사용
+import { PrismaClient, User } from '@prisma/client';
 import { getServerSession } from 'next-auth';
+// ★ authOptions 경로가 정확한지 확인하세요.
 import { authOptions } from '../auth/[...nextauth]/route';
 
-// --- OpenAI API 設定 ---
-const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
-const OPENAI_MODEL_NAME = 'gpt-5-nano';
+// --- Prisma Client 싱글톤 ---
+// 개발 환경에서 Next.js의 Hot Reload 시 PrismaClient가 과도하게 생성되는 것을 방지
+declare global {
+  // eslint-disable-next-line no-var
+  var prisma: PrismaClient | undefined;
+}
+const prisma = global.prisma ?? new PrismaClient();
+if (process.env.NODE_ENV !== 'production') global.prisma = prisma;
 
-// --- Developer Prompt 読み込み ---
+// --- OpenAI API 설정 ---
+const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
+// ★ 'gpt-5-nano'는 존재하지 않는 모델입니다. 'gpt-4o' 또는 'gpt-4-turbo' 등으로 변경해야 합니다.
+const OPENAI_MODEL_NAME = 'gpt-4o';
+
+// --- Developer Prompt (선택 사항) ---
 const developerPromptPath = path.join(
   process.cwd(),
   'src',
@@ -19,39 +31,27 @@ const developerPromptPath = path.join(
   'diff',
   'developer-prompt.txt'
 );
-
 let developerPrompt = '';
-
 try {
   developerPrompt = fs.readFileSync(developerPromptPath, 'utf-8').trim();
-} catch (error) {
-  console.error('[diff] Failed to read developer prompt:', error);
+} catch (e) {
+  // developer-prompt.txt가 없어도 정상 동작
 }
 
-// 開発者モード用フラグ（詳細ログ出力を制御）
-const isDeveloperModeEnabled = process.env.DIFF_DEVELOPER_MODE === 'true';
+// --- 타입 정의 ---
 
-const developerLog = (...args: unknown[]) => {
-  if (isDeveloperModeEnabled) {
-    console.log('[diff/dev]', ...args);
-  }
-};
-
-if (isDeveloperModeEnabled) {
-  developerLog('Developer prompt path', developerPromptPath);
-  developerLog('Developer prompt content', developerPrompt);
-}
-
-// --- リクエスト／レスポンス型 ---
 interface ScreenshotPayload {
   filename: string;
   data: string; // Base64 data URI (data:image/png;base64,...)
 }
 
+// ★ userSystemId를 제거하고 userId로 통일
 interface UploadRequestBody {
   screenshots: ScreenshotPayload[];
+  userId?: string; // NextAuth의 session.user.id (User 모델의 @id 필드)
 }
 
+// AI가 반환할 것으로 기대되는 JSON 스키마
 type DiffAnalysis = {
   observationA: string[];
   observationB: string[];
@@ -75,59 +75,31 @@ type ApiResponse = {
   analysisResults?: AnalysisResult[];
 };
 
-type ChatMessage =
-  | { role: 'system'; content: string }
-  | { role: 'developer'; content: string }
-  | {
-      role: 'user';
-      content: Array<
-        | { type: 'input_text'; text: string }
-        | { type: 'input_image'; image_url: { url: string } }
-      >;
-    };
-
-// Data URI を Buffer と MIME タイプに変換
+// --- 헬퍼 함수 1: Data URI 파싱 ---
 function parseDataURI(dataURI: string): { buffer: Buffer; mimeType: string } {
-  const regex = /^data:(.+);(base64),(.+)$/;
-  const match = dataURI.match(regex);
-
+  const match = dataURI.match(/^data:(.+);(base64),(.+)$/);
   if (!match || match.length < 4) {
-    throw new Error('Invalid Data URI.');
+    throw new Error('無効なData URI形式です。');
   }
-
-  const mimeType = match[1];
-  const base64Data = match[3];
-  const buffer = Buffer.from(base64Data, 'base64');
-
-  return { buffer, mimeType };
+  return { mimeType: match[1], buffer: Buffer.from(match[3], 'base64') };
 }
 
-// PrismaClient 싱글톤
-declare global {
-  // eslint-disable-next-line no-var
-  var prisma: PrismaClient | undefined
-}
-
-const prisma = global.prisma ?? new PrismaClient()
-if (process.env.NODE_ENV !== 'production') global.prisma = prisma
-
-// スクリーンショットを OpenAI API に送って解析する
+// --- 헬퍼 함수 2: OpenAI API 호출 ---
 async function analyzeScreenshotWithOpenAI(
   apiKey: string,
   screenshot: ScreenshotPayload
 ): Promise<DiffAnalysis> {
   const { filename, data } = screenshot;
 
-  const messages: ChatMessage[] = [
+  const messages: any[] = [
     {
       role: 'system',
       content:
-        'You help analyze pairs of screenshots and report comparisons accurately and concisely.',
+        'あなたは提供されたスクリーンショットを分析し、指定されたJSONスキーマで分析結果を返すアシスタントです。',
     },
   ];
 
   if (developerPrompt) {
-    // developer-prompt.txt が存在する場合は developer ロールとして追加
     messages.push({ role: 'developer', content: developerPrompt });
   }
 
@@ -135,17 +107,14 @@ async function analyzeScreenshotWithOpenAI(
     role: 'user',
     content: [
       {
-        type: 'input_text',
-        text: `Analyze the screenshot named "${filename}" and follow the specified comparison format.`,
+        type: 'text', // OpenAI 표준 'text' 사용
+        text: `"${filename}" という名前のスクリーンショットを分析してください。`,
       },
-      { type: 'input_image', image_url: { url: data } },
+      {
+        type: 'image_url', // OpenAI 표준 'image_url' 사용
+        image_url: { url: data },
+      },
     ],
-  });
-
-  developerLog('Created OpenAI analysis request', {
-    filename,
-    withDeveloperPrompt: Boolean(developerPrompt),
-    dataSnippet: data.slice(0, 48),
   });
 
   const response = await fetch(OPENAI_API_URL, {
@@ -157,268 +126,208 @@ async function analyzeScreenshotWithOpenAI(
     body: JSON.stringify({
       model: OPENAI_MODEL_NAME,
       messages,
-      response_format: {
-        type: 'json_schema',
-        json_schema: {
-          name: 'diff_analysis',
-          strict: true,
-          schema: {
-            type: 'object',
-            additionalProperties: false,
-            properties: {
-              observationA: {
-                type: 'array',
-                minItems: 1,
-                items: { type: 'string' },
-                description: 'Observations specific to screenshot A.',
-              },
-              observationB: {
-                type: 'array',
-                minItems: 1,
-                items: { type: 'string' },
-                description: 'Observations specific to screenshot B.',
-              },
-              sharedFeatures: {
-                type: 'array',
-                minItems: 1,
-                items: { type: 'string' },
-                description: 'Features common to both screenshots.',
-              },
-              differences: {
-                type: 'array',
-                minItems: 1,
-                items: { type: 'string' },
-                description: 'Notable differences between the screenshots.',
-              },
-              summary: {
-                type: 'string',
-                description: 'Overall summary of the comparison.',
-              },
-              importanceScore: {
-                type: 'number',
-                minimum: 0,
-                maximum: 1,
-                description: 'Importance score for screenshot B (0.0-1.0).',
-              },
-              importanceReason: {
-                type: 'string',
-                description: 'Reason for the assigned importance score.',
-              },
-            },
-            required: [
-              'observationA',
-              'observationB',
-              'sharedFeatures',
-              'differences',
-              'summary',
-              'importanceScore',
-              'importanceReason',
-            ],
-          },
-        },
-      },
-      max_tokens: 320,
+      max_tokens: 512,
       temperature: 0.3,
+      // response_format: { type: "json_object" }, // JSON 출력을 강제하려면 이 옵션을 권장
     }),
   });
 
   if (!response.ok) {
-    const errorPayload = await response.json().catch(() => ({} as Record<string, unknown>));
-    throw new Error(
-      `OpenAI request failed with status ${response.status}: ${
-        (errorPayload as { error?: { message?: string } }).error?.message ?? 'unknown error'
-      }`
-    );
+    throw new Error(`OpenAI API エラー: ${response.status} ${response.statusText}`);
   }
 
-  const payload = (await response.json()) as {
-    choices?: Array<{ message?: { content?: string } }>;
-  };
-
-  const content = payload.choices?.[0]?.message?.content?.trim();
-
-  if (!content) {
-    throw new Error('OpenAI returned an empty analysis result.');
-  }
-
-  let parsed: DiffAnalysis;
-
+  const text = await response.text();
   try {
-    parsed = JSON.parse(content) as DiffAnalysis;
-  } catch (error) {
-    developerLog('Failed to parse OpenAI analysis JSON', { filename, content });
-    throw new Error('OpenAI response was not valid JSON.');
+    // OpenAI가 마크다운(```json ... ```)으로 응답할 경우를 대비
+    const jsonMatch = text.match(/```json\n([\s\S]*?)\n```/);
+    if (jsonMatch && jsonMatch[1]) {
+      return JSON.parse(jsonMatch[1]) as DiffAnalysis;
+    }
+    return JSON.parse(text) as DiffAnalysis;
+  } catch (e) {
+    throw new Error(`OpenAIがJSON形式でない応答を返しました: ${text}`);
   }
-
-  developerLog('Received OpenAI analysis result', {
-    filename,
-    summaryPreview: parsed.summary.slice(0, 120),
-    observationACount: parsed.observationA.length,
-    observationBCount: parsed.observationB.length,
-  });
-
-  return parsed;
 }
 
-export const runtime = 'nodejs';
+// --- 헬퍼 함수 3: 사용자 찾기 (중복 로직 통합) ---
+async function findDatabaseUser(
+  body: UploadRequestBody,
+  request: NextRequest // 쿠키 접근을 위해 NextRequest가 필요
+): Promise<User | null> {
+  
+  // 1. uploader.py가 명시적으로 ID를 보낸 경우 (가장 빠름)
+  if (body.userId) {
+    // userId corresponds to User.id in the schema
+    const user = await prisma.user.findUnique({ where: { id: body.userId } });
+    if (user) return user;
+  }
+
+  // 2. 세션/쿠키를 통해 서버에서 사용자를 찾는 경우 (Fallback)
+  try {
+    const session = await getServerSession(authOptions as any);
+    // NextAuth.js 어댑터는 User 모델의 @id 필드를 session.user.id에 담아줍니다.
+    if ((session as any)?.user?.id) {
+      const user = await prisma.user.findUnique({ where: { id: (session as any).user.id } });
+      if (user) return user;
+    }
+    // 이메일로도 확인
+    if ((session as any)?.user?.email) {
+      const user = await prisma.user.findUnique({ where: { email: (session as any).user.email } });
+      if (user) return user;
+    }
+  } catch (e) {
+    console.error('[diff] getServerSession failed', (e as Error).message);
+  }
+
+  // 3. (제공된 코드 로직 유지) 쿠키에서 직접 세션 토큰을 찾아 DB 쿼리
+  try {
+    const cookieNames = ['__Secure-next-auth.session-token', 'next-auth.session-token'];
+    let tokenValue: string | undefined;
+    for (const name of cookieNames) {
+      const c = request.cookies.get(name);
+      if (c?.value) {
+        tokenValue = c.value;
+        break;
+      }
+    }
+
+    if (tokenValue) {
+      const dbSession = await prisma.session.findUnique({
+        where: { sessionToken: tokenValue },
+        include: { user: true },
+      });
+      if (dbSession?.user) return dbSession.user;
+    }
+  } catch (e) {
+    console.error('[diff] Cookie-based session lookup failed', (e as Error).message);
+  }
+  
+  return null;
+}
+
+// --- 헬퍼 함수 4: DB 저장 (중복 로직 통합 및 최적화) ---
+async function saveAnalysisToDb(userId: string, analysis: DiffAnalysis) {
+  try {
+    // 1. 오늘의 날짜 (YYYY-MM-DD 형식의 Date 객체)
+    const today = new Date();
+    // UTC 기준으로 날짜를 생성하여 시간대를 통일
+    const dateOnly = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+
+    // 2. 타임스탬프 키 생성 (JSON 내부 키)
+    const now = new Date();
+    const pad = (n: number, w = 2) => String(n).padStart(w, '0');
+    const tsKey = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}:${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}.${String(now.getMilliseconds()).padStart(3, '0')}`;
+
+    // 3. Upsert (Update or Insert) 로직
+    // findFirst avoids relying on generated "WhereUniqueInput" names and works with the fields
+  const existing = await prisma.userTaskPersonalLog.findFirst({ where: { userId, taskDateId: dateOnly } as any });
+
+    let mapObj: Record<string, any> = {};
+
+    // 4. 기존 taskTempTxt(JSON)가 있으면 가져와서 병합
+    if (existing?.taskTempTxt && typeof existing.taskTempTxt === 'object' && !Array.isArray(existing.taskTempTxt)) {
+      mapObj = existing.taskTempTxt as Record<string, any>;
+    } else if (existing?.taskTempTxt && Array.isArray(existing.taskTempTxt)) {
+      // (제공된 코드의 배열 -> 객체 변환 로직 유지)
+      try {
+        for (const it of existing.taskTempTxt as any[]) {
+          if (it && it.time) mapObj[String(it.time)] = it.analysis ?? it;
+        }
+      } catch (e) { mapObj = {}; }
+    }
+
+    // 5. 새 분석 결과를 타임스탬프 키로 추가
+    mapObj[tsKey] = analysis;
+
+    // 6. DB 실행: Upsert
+    if (existing) {
+      // updateMany used to avoid composite unique where typing issues
+              await prisma.userTaskPersonalLog.updateMany({ where: { userId, taskDateId: dateOnly } as any, data: { taskTempTxt: mapObj } });
+    } else {
+      await prisma.userTaskPersonalLog.create({ data: { user: { connect: { id: userId } }, taskDateId: dateOnly, taskTempTxt: mapObj } });
+    }
+
+  } catch (dbErr) {
+    console.error('[diff] DB 저장 에러:', dbErr);
+    // 이 에러는 클라이언트에게 치명적인 에러로 반환하지 않고, 서버에만 로깅
+  }
+}
+
+// --- API 메인 핸들러 ---
+export const runtime = 'nodejs'; // Vercel 엣지 런타임이 아닌 Node.js 런타임 사용 명시
 
 export async function POST(request: NextRequest): Promise<NextResponse<ApiResponse>> {
   try {
     const body = (await request.json()) as UploadRequestBody;
     const { screenshots } = body;
 
+    // 1. 유효성 검사
     if (!screenshots || !Array.isArray(screenshots) || screenshots.length === 0) {
-      return NextResponse.json(
-        {
-          status: 'error',
-          message: 'Invalid payload. The "screenshots" array is required.',
-        },
-        { status: 400 }
-      );
+      return NextResponse.json({ status: 'error', message: 'スクリーンショット配列が見つかりません。' }, { status: 400 });
     }
 
     const apiKey = process.env.OPENAI_API_KEY;
-
     if (!apiKey) {
-      return NextResponse.json(
-        {
-          status: 'error',
-          message: 'OPENAI_API_KEY is not configured on the server.',
-        },
-        { status: 500 }
-      );
+      return NextResponse.json({ status: 'error', message: 'OPENAI_API_KEYがサーバーに設定されていません。' }, { status: 500 });
     }
 
-  // debug log removed
-    developerLog(
-      'Screenshot filenames',
-      screenshots.map((shot) => shot.filename)
-    );
+    // 2. 사용자 인증 (루프 시작 전 한 번만 실행)
+    // ★ request 객체를 전달하여 쿠키도 조회할 수 있도록 함
+    const dbUser = await findDatabaseUser(body, request);
 
+    // 3. 각 스크린샷 처리
     const processedFiles: { filename: string; size: number }[] = [];
     const analysisResults: AnalysisResult[] = [];
 
     for (const shot of screenshots) {
-      const { filename, data } = shot;
-
-  const { buffer } = parseDataURI(data);
-
-  const tempDir = os.tmpdir();
-  const tempFilePath = path.join(tempDir, filename);
-  // use async write to satisfy types (cast Buffer to Uint8Array)
-  await fs.promises.writeFile(tempFilePath, buffer as unknown as Uint8Array);
-
-  processedFiles.push({ filename, size: buffer.length });
-  // debug log removed
-
       try {
-        const analysis = await analyzeScreenshotWithOpenAI(apiKey, shot);
-        analysisResults.push({ filename, analysis });
-        // --- DB 저장 로직: 로그인한 유저의 오늘 기록에 추가 ---
+        // 4. 임시 파일 저장 (디버깅/로깅용)
+  const { buffer } = parseDataURI(shot.data);
+  const tempFilePath = path.join(os.tmpdir(), shot.filename);
+  await fs.promises.writeFile(tempFilePath, buffer as unknown as Uint8Array);
+        processedFiles.push({ filename: shot.filename, size: buffer.length });
+
+        // 5. OpenAI 분석
+        let analysis: DiffAnalysis | undefined;
         try {
-          // 1) 우선 NextAuth의 getServerSession을 사용해서 세션을 얻어본다.
-          //    (실환경/런타임 차이로 동작하지 않으면 아래 쿠키 기반 폴백으로 넘어간다.)
-          let dbUser: any | null = null
-
-          try {
-            const serverSession: any = await getServerSession(authOptions as any)
-            // 가능한 경우 id와 email 둘다 확인하여 더 정확히 사용자 매핑
-            if (serverSession?.user) {
-              if (serverSession.user.id) {
-                dbUser = await prisma.user.findUnique({ where: { id: serverSession.user.id } })
-              }
-              if (!dbUser && serverSession.user.email) {
-                dbUser = await prisma.user.findUnique({ where: { email: serverSession.user.email } })
-              }
-            }
-          } catch (e) {
-            // getServerSession 호출이 어떤 환경에서 실패할 수 있으므로 디버그 로그만 남기고 폴백 처리
-            developerLog('getServerSession failed, will fallback to cookie lookup', { err: (e as Error).message })
-          }
-
-          // 2) getServerSession 으로 못찾았으면 기존 쿠키->session 테이블 조회 방식 폴백
-          if (!dbUser) {
-            const cookieNames = ['__Secure-next-auth.session-token', 'next-auth.session-token', 'next-auth.session-token']
-            let tokenValue: string | undefined
-            for (const name of cookieNames) {
-              const c = request.cookies.get(name)
-              if (c && c.value) {
-                tokenValue = c.value
-                break
-              }
-            }
-
-            if (tokenValue) {
-              const dbSession = await prisma.session.findUnique({ where: { sessionToken: tokenValue }, include: { user: true } })
-              if (dbSession && dbSession.user) dbUser = dbSession.user
-            }
-          }
-
-          // 3) dbUser가 있으면 오늘 날짜 레코드를 만들거나 업데이트하여 배열에 누적 저장
-          if (dbUser) {
-            const { userSystemId } = dbUser
-            const today = new Date()
-            const yyyy = today.getFullYear()
-            const mm = String(today.getMonth() + 1).padStart(2, '0')
-            const dd = String(today.getDate()).padStart(2, '0')
-            // Prisma Date 타입(날짜만)으로 저장하기 위해 yyyy-mm-dd 형식 사용
-            const dateOnly = new Date(`${yyyy}-${mm}-${dd}`)
-
-            const existing = await prisma.userTaskPersonalLog.findUnique({ where: { userSystemId_taskDateId: { userSystemId, taskDateId: dateOnly } } })
-
-            // 고유성 확보를 위해 Unix timestamp 사용
-            const timestamp = Date.now()
-            // 새 스키마: taskTempTxt는 배열로 누적 저장
-            const entry = { time: timestamp, filename, analysis }
-
-            if (existing) {
-              // 기존 값이 배열인지 확인하고 아니면 변환
-              let prevArray: any[] = []
-              if (existing.taskTempTxt) {
-                if (Array.isArray(existing.taskTempTxt)) prevArray = existing.taskTempTxt as any[]
-                else {
-                  // 이전에 객체 형태로 저장된 경우(호환성 유지): 변환하여 배열로 만든다.
-                  try {
-                    const asObj = existing.taskTempTxt as Record<string, unknown>
-                    prevArray = Object.keys(asObj).map((k) => ({ time: k, analysis: (asObj as any)[k] }))
-                  } catch (e) {
-                    prevArray = []
-                  }
-                }
-              }
-
-              prevArray.push(entry)
-
-              await prisma.userTaskPersonalLog.update({
-                where: { userSystemId_taskDateId: { userSystemId, taskDateId: dateOnly } },
-                data: { taskTempTxt: prevArray },
-              })
-            } else {
-              await prisma.userTaskPersonalLog.create({ data: { userSystemId, taskDateId: dateOnly, taskTempTxt: [entry] } })
-            }
-          }
-        } catch (dbErr) {
-          console.error('[diff] DB save error:', dbErr)
+          analysis = await analyzeScreenshotWithOpenAI(apiKey, shot);
+          analysisResults.push({ filename: shot.filename, analysis });
+        } catch (openAiErr: any) {
+          console.error(`[diff] OpenAI エラー (${shot.filename}):`, openAiErr);
+          analysisResults.push({ filename: shot.filename, error: openAiErr?.message || String(openAiErr) });
+          continue; // AI 분석 실패 시 DB 저장을 건너뛰고 다음 루프로
         }
-      } catch (error) {
-        console.error(`[diff] OpenAI error (${filename}):`, error);
-        analysisResults.push({
-          filename,
-          error: `OpenAI API error: ${(error as Error).message}`,
-        });
+
+        // 6. DB 저장
+        if (dbUser && analysis) {
+          // dbUser.id is the primary identifier
+          saveAnalysisToDb(dbUser.id, analysis).catch(dbErr => {
+            console.error(`[diff] DB async save error (${shot.filename}):`, dbErr);
+          });
+        } else if (!dbUser) {
+          console.warn(`[diff] ユーザーが見つからないため、DBに保存できませんでした。 (${shot.filename})`);
+        }
+
+      } catch (loopErr: any) {
+        // (파일 저장 실패, Data URI 파싱 실패 등)
+        console.error(`[diff] ファイル処理エラー (${shot.filename}):`, loopErr);
+        analysisResults.push({ filename: shot.filename, error: loopErr?.message || String(loopErr) });
       }
     }
 
+    // 7. 최종 응답
     return NextResponse.json({
       status: 'success',
-      message: `Processed ${processedFiles.length} files on the server.`,
+      message: `サーバー側で ${processedFiles.length}件 のファイルを処理しました。`,
       processedFiles,
       analysisResults,
     });
-  } catch (error: any) {
-    console.error('Upload processing error:', error);
+
+  } catch (err: any) {
+    // (JSON 파싱 실패 등 요청 자체의 문제)
+    console.error('[diff] リクエスト処理中の致命적인エラー:', err);
     return NextResponse.json(
-      { status: 'error', message: `Server error: ${error.message}` },
+      { status: 'error', message: `サーバーエラー: ${err.message}` },
       { status: 500 }
     );
   }

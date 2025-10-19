@@ -381,7 +381,15 @@ body {
 .main-content {
   padding: 1.5rem 0;
 }
+main {
+  /* この3行で、中の要素が上下左右の真ん中に来ます */
+  display: flex;
+  justify-content: center; /* 水平方向（左右）の中央揃え */
+  align-items: center;     /* 垂直方向（上下）の中央揃え */
 
+  /* 画面全体の高さを確保するために必要 */
+  min-height: 100vh;
+}
 .grid {
   display: grid;
   /* デフォルトを2列レイアウトにする */
