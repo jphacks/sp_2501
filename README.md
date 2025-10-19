@@ -1,7 +1,7 @@
 # processlog
 
-[![IMAGE ALT TEXT HERE](https://jphacks.com/wp-content/uploads/2025/05/JPHACKS2025_ogp.jpg)](https://www.youtube.com/watch?v=lA9EluZugD8)
-
+[![IMAGE ALT TEXT HERE](https://raw.githubusercontent.com/jphacks/sp_2501/refs/heads/main/sampleImage.png)
+[![Video Label](http://img.youtube.com/vi/w3tBt64taQU/0.jpg)](https://youtu.be/w3tBt64taQU)
 ## 製品概要
 `ProcessLog`は、PC上の活動を自動的に記録し、可視化・要約することで、日々のクリエイティブ制作や業務の振り返りを支援するシステムです。デスクトップアプリケーションが定期的にスクリーンショットを撮影し、Webアプリケーションがその情報を分析・整理します。
 
