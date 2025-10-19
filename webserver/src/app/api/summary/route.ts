@@ -37,7 +37,7 @@ async function requestSummaryFromOpenAI(contentToSummarize: string) {
   });
 
   const response = await openai.chat.completions.create({
-    model: 'gpt-4o', // 👈 gpt-5 대신 gpt-4o 사용
+    model: 'gpt-5', // 👈 gpt-5 대신 gpt-5 사용
     messages: [
       {
         role: 'system',

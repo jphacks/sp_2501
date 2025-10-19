@@ -94,7 +94,7 @@ async function analyzeImages(imgA: ScreenshotPayload, imgB: ScreenshotPayload) {
     apiKey: process.env.OPENAI_API_KEY,
   });
   const response = await openai.chat.completions.create({
-    model: 'gpt-4o', // 1단계에서 논의된 모델
+    model: 'gpt-5-nano', // 1단계에서 논의된 모델
     response_format: { type: 'json_object' }, // JSON 출력 강제
     messages: [
       {
@@ -178,7 +178,7 @@ export async function POST(request: NextRequest) {
 
     const [imgA, imgB] = screenshots;
 
-    // 3. AI 분석 호출 (gpt-4o)
+    // 3. AI 분석 호출 (gpt-5-nano)
     const analysisResult = await analyzeImages(imgA, imgB);
 
     // 4. 타임스탬프 및 날짜 파싱 (Q3 동의)

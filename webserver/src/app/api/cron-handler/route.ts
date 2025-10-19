@@ -18,7 +18,7 @@ try {
 async function requestSummaryFromOpenAI(contentToSummarize: string) {
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const response = await openai.chat.completions.create({ /* ... 모델, 메시지 등 설정 ... */
-        model: 'gpt-4o',
+        model: 'gpt-5',
         messages: [
           { role: 'system', content: SUMMARY_PROMPT_TEMPLATE },
           { role: 'user', content: contentToSummarize },
