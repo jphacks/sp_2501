@@ -69,38 +69,57 @@ body {
 
 /* Header */
 .header {
-	background-color: var(--card);
-	border-bottom: 1px solid var(--border);
-	padding: 1rem 0;
-	transition: all 0.3s;
+  background-color: var(--card);
+  border-bottom: 1px solid var(--border);
+  padding: 1rem 0;
+  transition: all 0.3s;
 }
 
 .header-content {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .header-left {
-	display: flex;
-	align-items: center;
-	gap: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
 .header-right {
-	display: flex;
-	align-items: center;
-	gap: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
 .logo {
-	width: 40px;
-	height: 40px;
-	background-color: var(--primary);
-	border-radius: var(--radius);
-	display: flex;
-	align-items: center;
-	justify-content: center;
+  width: 40px;
+  height: 40px;
+  background-color: var(--primary);
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-icon {
+  width: 24px;
+  height: 24px;
+  color: var(--primary-foreground);
+}
+
+.header-title h1 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--foreground);
+  transition: all 0.3s;
+}
+
+.header-title p {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+  transition: all 0.3s;
 }
 
 .logo-icon {
@@ -109,22 +128,29 @@ body {
 	color: var(--primary-foreground);
 }
 
+
+.header-title {
+  display: flex;
+  flex-direction: column;
+}
+
 .header-title h1 {
-	font-size: 1.25rem;
-	font-weight: 600;
-	color: var(--foreground);
-	transition: all 0.3s;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--foreground);
+  transition: all 0.3s;
 }
 
 .header-title p {
-	font-size: 0.875rem;
-	color: var(--muted-foreground);
-	transition: all 0.3s;
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+  transition: all 0.3s;
 }
 
-/* Main Content */
-.main-content {
-	padding: 1.5rem 0;
+.logo-icon {
+	width: 24px;
+	height: 24px;
+	color: var(--primary-foreground);
 }
 
 .grid {
@@ -229,4 +255,6 @@ body {
 .stop-btn { background: #a93226 } /* 정지 - 어두운 빨간색 */
 
 @media (max-width: 480px) { .login-container { padding: 30px 20px } .login-header h1 { font-size: 20px } }
+
+
 
