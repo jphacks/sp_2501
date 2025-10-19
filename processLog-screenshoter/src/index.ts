@@ -36,8 +36,12 @@ const getErrorMessage = (err: unknown): string => {
 
 // 2. Python スクリプト実行パス
 const pythonPath = isDev ? 'python' : path.join(resourcesPath, 'venv', 'python.exe'); // (配布時の venv パス)
+/*
 const appPyPath = path.join(resourcesPath, 'backend', 'app.py');
 const uploaderPyPath = path.join(resourcesPath, 'backend', 'uploader.py');
+*/
+const appPyPath = path.join(resourcesPath, 'backend', 'dist', 'app.exe'); // 👈 경로 변경
+const uploaderPyPath = path.join(resourcesPath, 'backend', 'dist', 'uploader.exe'); // 👈 경로 변경
 
 // 3. UI ロード URL と API
 const UI_URL = 'https://process-log.vercel.app';
@@ -117,7 +121,8 @@ const startPythonProcesses = () => {
 
   try { // [추가] spawn 자체에서 오류가 발생할 수 있으므로 try...catch 추가
     // (1) 캡처 서버 (app.py) 실행
-    appPy = spawn(pythonPath, [appPyPath]);
+    //appPy = spawn(pythonPath, [appPyPath]);
+    appPy = spawn(appPyPath, []);
 
     if (appPy) {
       if (appPy.stdout) appPy.stdout.on('data', (data) => sendLogToUI(`[App.py]: ${data.toString().trim()}`));

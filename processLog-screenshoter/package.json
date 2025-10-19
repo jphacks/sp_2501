@@ -1,8 +1,11 @@
 {
   "name": "processlog-screenshoter",
   "version": "1.0.0",
-  "description": "스크린샷 캡처 및 분석 클라이언트",
+  "description": "スクリーンショットのキャプチャと分析クライアント",
   "main": ".webpack/main",
+  "author": "Team ProcessToNext",
+  "license": "ISC",
+
   "scripts": {
     "start": "electron-forge start",
     "package": "electron-forge package",
