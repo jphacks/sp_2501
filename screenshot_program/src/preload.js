@@ -10,6 +10,7 @@ contextBridge.exposeInMainWorld('api', {
   // settings 파일 읽기/쓰기
   readSettings: () => ipcRenderer.invoke('settings:read'),
   writeSettings: (obj) => ipcRenderer.invoke('settings:write', obj),
+  writeUserMeta: (meta) => ipcRenderer.invoke('user:writeMeta', meta),
   // 스크린샷 통계 요청
   getScreenshotStats: async () => {
     try {

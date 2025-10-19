@@ -33,6 +33,7 @@ type PersonalSettings = {
       getScreenshotStats?: () => Promise<{ totalShots: number; totalSize: number; deletedCount: number }>
       listScreenshots?: () => Promise<string[]>
       onSettingsChanged: (cb: (data: any) => void) => () => void
+      writeUserMeta?: (meta: { userId?: string; userSystemId?: string }) => Promise<{ ok: boolean }>
       closeWindow?: () => Promise<any>
     }
   }
@@ -267,6 +268,51 @@ export default function Home() {
     // activityLog state는 lazy init에서 로드되므로 추가 동기화는 필요하지 않음
   }, [])
 
+  // When session becomes available (user logged in), notify server to ensure DB record exists
+  useEffect(() => {
+    if (!session || !session.user) return
+    ;(async () => {
+      try {
+        const payload = {
+          provider: 'google',
+          email: (session.user as any).email,
+          name: (session.user as any).name,
+          image: (session.user as any).image,
+          providerAccountId: (session.user as any).id,
+        }
+
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+
+        const json = await res.json()
+        if (json && json.ok) {
+          pushActivity('ログイン情報をサーバーに保存しました')
+          try {
+            // if server returned user identifiers, persist them to app settings so uploader can include them
+            if (json.user) {
+              const uid = json.user.id || json.user.userSystemId || null
+              const userSystemId = json.user.userSystemId || null
+              try {
+                if (typeof window !== 'undefined' && window.api?.writeUserMeta) {
+                  await window.api.writeUserMeta({ userId: json.user.id, userSystemId: userSystemId })
+                }
+              } catch (e) {}
+              try { if (uid) localStorage.setItem('userId', uid) } catch (e) {}
+              try { if (userSystemId) localStorage.setItem('userSystemId', userSystemId) } catch (e) {}
+            }
+          } catch (e) {}
+        } else {
+          pushActivity('ログイン情報の保存に失敗しました')
+        }
+      } catch (e) {
+        pushActivity('ログイン通知中にエラーが発生しました')
+      }
+    })()
+  }, [session])
+
   // no-op: fixed activity log height
 
   // 마운트 후 DOM 조작: generate report 버튼 바인딩 및 리포트 리스트 렌더링
@@ -471,6 +517,7 @@ export default function Home() {
                 </div>
               </div>
               <div className="header-right">
+                
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ fontWeight: 600 }}>{userName}</div>
@@ -480,8 +527,46 @@ export default function Home() {
                     <Image src={session.user.image} alt="Profile" width={48} height={48} style={{ borderRadius: '50%' }} />
                   )}
                 </div>
-                <div style={{ marginLeft: 12 }}>
-                  <button onClick={() => signOut()} className="logout-btn">ログアウト</button>
+                  <div style={{ backgroundColor: '#333333', width: "1px", height: "60px", margin: "0 12px" , border: '1px solid #333'}}></div>
+
+
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+
+<div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+    
+    {/* 余分な <div> を削除し、<p> と <label> を
+      直接 Flexboxコンテナの子要素にします。
+    */}
+    <p style={{ margin: 0, display: 'flex' }}> {/* スタイルを少し調整 */}
+        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#1f1f1f"><path d="M480-120q-150 0-255-105T120-480q0-150 105-255t255-105q14 0 27.5 1t26.5 3q-41 29-65.5 75.5T444-660q0 90 63 153t153 63q55 0 101-24.5t75-65.5q2 13 3 26.5t1 27.5q0 150-105 255T480-120Zm0-80q88 0 158-48.5T740-375q-20 5-40 8t-40 3q-123 0-209.5-86.5T364-660q0-20 3-40t8-40q-78 32-126.5 102T200-480q0 116 82 198t198 82Zm-10-270Z"/></svg>
+    </p>
+
+    <label className="toggle-switch">
+        <input type="checkbox" id="myToggle_right" onChange={(e) => {
+            try { localStorage.setItem('darkMode', e.target.checked ? '1' : '0') } catch (e) {}
+            document.body.classList.toggle('dark', e.target.checked)
+        }} defaultChecked={typeof window !== 'undefined' && localStorage.getItem('darkMode') === '1'} />
+        <span className="slider"></span>
+    </label>
+
+</div>
+                </div>
+
+                  <div style={{ backgroundColor: '#333333', width: "1px", height: "60px", margin: "0 12px" , border: '1px solid #333'}}></div>
+                <div style={{ display: 'flex'}}>
+
+
+                  <div>
+                    <button onClick={() => signOut()} className="logout-btn select" style={{width: '50px', height: '50px', alignItems: 'center'}}>
+                      <svg xmlns="http://www.w3.org/2000/svg" height="30px" viewBox="0 -960 960 960" width="30px" fill="#1f1f1f"><path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h280v80H200Zm440-160-55-58 102-102H360v-80h327L585-622l55-58 200 200-200 200Z"/></svg>
+                    </button>
+                  </div>
+
+
+
+
+
                 </div>
               </div>
             </div>
@@ -586,19 +671,10 @@ export default function Home() {
             </div>
 
             <div className='yoko yoko-right'>
-                  <div className="card-header"><h4>処理状況</h4></div>
+                  <div className="card-header"><h4>アクティビティログ</h4></div>
                   <div className="card-content">
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, whiteSpace: 'nowrap' }}>
-                      <div>処理状況: <strong>{statusText || '待機中...'}</strong></div>
-                      <div>システム状態: <strong>{isRecording ? '稼働中' : '待機中'}</strong></div>
-                      <div>AI分析: <strong>{isRecording ? '稼働中' : '準備完了'}</strong></div>
-                      <div>OpenAI API: <strong>接続済み</strong></div>
-                    </div>
-                    <hr />
-                    <h4 style={{ marginTop: 12 }}>アクティビティログ</h4>
                     <div className="activity-log">
-                      <h3 className="activity-title">アクティビティログ</h3>
-                      <div className="activity-list" id="activityLog" style={{ marginTop: 8, overflow: 'auto', maxHeight: `${FIXED_ACTIVITY_LOG_HEIGHT}px` }}>
+                        <div className="activity-list" id="activityLog" style={{ marginTop: 8, overflow: 'auto', maxHeight: `450px` }}>
                         {activityLog.map((a, idx) => (
                           <div className="activity-item" key={idx}>
                             <span className="activity-time">{a.time}</span>
@@ -613,16 +689,6 @@ export default function Home() {
                     <span className="dot" />
                     <span className="dot" />
                   </div>
-                  <div style={{ marginTop: 12 }}>
-                    <p style={{ marginBottom: 6 }}>ダークモード</p>
-                    <label className="toggle-switch">
-                      <input type="checkbox" id="myToggle_right" onChange={(e) => {
-                        try { localStorage.setItem('darkMode', e.target.checked ? '1' : '0') } catch (e) {}
-                        document.body.classList.toggle('dark', e.target.checked)
-                      }} defaultChecked={typeof window !== 'undefined' && localStorage.getItem('darkMode') === '1'} />
-                      <span className="slider"></span>
-                    </label>
-                  </div>
                 </div>
               </div>
 
@@ -631,7 +697,6 @@ export default function Home() {
             </div>
 
             <div className="col-right" style={{ flex: '1 1 32%' }}>
-              
 
               <section className="card yoko">
                 <div className="card-header"><h4>レポート生成</h4></div>
@@ -686,7 +751,7 @@ export default function Home() {
 }
 
   return (
-    <main style={{ padding: '2rem' }}>
+    <main style={{ padding: '2rem' , }}>
       <div className="login-container">
         <button className="close-button" id="closeButton" aria-label="閉じる" onClick={async () => {
           try {

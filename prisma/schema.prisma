@@ -12,7 +12,6 @@ model User{
     // Standard NextAuth primary key
     id                  String @id @default(cuid())
     // Existing project-specific system id (kept for compatibility)
-    userSystemId        String @unique @default(cuid())
     name                String?
     email               String? @unique
     emailVerified       DateTime?
@@ -29,7 +28,6 @@ model Account {
     id                  String @id @default(cuid())
     // userId references User.id to satisfy NextAuth adapter expectations
     userId              String
-    userSystemId        String?
     type                String  //login type
     provider            String  //google
     providerAccountId   String
@@ -51,7 +49,6 @@ model Session{
     id                  String @id @default(cuid())
     // userId references User.id (NextAuth standard)
     userId              String
-    userSystemId        String?
     sessionToken        String @unique
     expires             DateTime
     user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -66,13 +63,14 @@ model VerificationToken{
 }
 
 model UserTaskPersonalLog{
-    userSystemId        String
+    id                  String   @default(cuid())
+    userId              String
     createdAt           DateTime @default(now())
     updatedAt           DateTime @updatedAt
     taskDateId          DateTime @db.Date //タスク日付(example : 2025-10-18)
     taskTempTxt         Json?        //もらったスクショ二つを分析した内容をJSONで保存
     taskContent         String?      //タスク内容
-    user User @relation(fields: [userSystemId], references: [userSystemId], onDelete: Cascade)
-    @@id([userSystemId, taskDateId])
-    @@index([userSystemId, taskDateId(desc)])
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+    @@id([userId, taskDateId])
+    @@index([userId, taskDateId(desc)])
 }

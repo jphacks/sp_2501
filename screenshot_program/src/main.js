@@ -219,6 +219,23 @@ ipcMain.handle('settings:write', async (event, obj) => {
   }
 })
 
+// write user meta (userId, userSystemId) to repo root uploader_config.json
+ipcMain.handle('user:writeMeta', async (event, meta) => {
+  try {
+    const repoRoot = path.join(__dirname, '..')
+    const metaPath = path.join(repoRoot, 'uploader_config.json')
+    // read existing config if any
+    let cfg = {}
+    try { if (fs.existsSync(metaPath)) cfg = JSON.parse(await fsp.readFile(metaPath, 'utf8')) } catch(e) {}
+    const next = Object.assign({}, cfg, meta || {})
+    await fsp.writeFile(metaPath, JSON.stringify(next, null, 2), 'utf8')
+    return { ok: true }
+  } catch (e) {
+    console.error('user:writeMeta error', e)
+    return { ok: false, error: String(e) }
+  }
+})
+
 // 'screenshots:stats' - screenshot 폴더와 screenshot/uploaded 폴더의 통계를 계산해서 반환
 ipcMain.handle('screenshots:stats', async () => {
   try {
