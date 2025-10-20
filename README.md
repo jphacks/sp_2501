@@ -28,8 +28,8 @@ https://process-log.vercel.app/
 2.  **Web API サーバー (Next.js/Vercel + Neon DB):**
     Vercelにホストされたサーバーレス API です。**Google OAuth**による認証を基盤とし、ローカルから送信されたデータを Neon DBに保存・管理します。
 
-3.  **データ分析・AI処理 (GPT-4o):**
-    分析処理には、高性能な**GPT-4o**モデルを使用し、複雑な画像比較や時系列要約を実行します。
+3.  **データ分析・AI処理 (GPT-5-nano):**
+    分析処理には、高性能な**GPT-5-nano**モデルを使用し、複雑な画像比較や時系列要約を実行します。
 
 ### 特長
 #### 1. 活動の自動記録
@@ -58,7 +58,7 @@ https://process-log.vercel.app/
 ### 注力したこと（こだわり等）
 * **Python実行ファイルとElectronの統合（PyInstaller）:** デスクトップアプリのElectronとPythonバックエンドを**PyInstallerで単一ファイル化**し、OSネイティブ機能とWeb UIの連携をシームレスに、かつ配布が容易な形で実現した点。
 * **堅牢なクロスコンポーネント認証:** ローカルのPythonプロセスが、NextAuth.jsが発行する**セッションDBトークン**を利用して、セキュアなAPIリクエストを送信する仕組みを実装し、認証の信頼性を高めた点。
-* **AI（GPT-5）を活用した高度な分析:** 単なる差分検出に留まらず、「重要度」のスコアリングや「活動の要約」といった高付加価値な情報を提供するAPIを設計・実装した点。
+* **AI（GPT-5-nano）を活用した高度な分析:** 単なる差分検出に留まらず、「重要度」のスコアリングや「活動の要約」といった高付加価値な情報を提供するAPIを設計・実装した点。
 
 ---
 
@@ -68,7 +68,7 @@ https://process-log.vercel.app/
 * **Next.js API Routes**
 * **Prisma (ORM)**
 * **Neon (PostgreSQL)**
-* **OpenAI API (GPT-4o)**
+* **OpenAI API (GPT-5-nano)**
 
 #### フレームワーク・ライブラリ・モジュール
 * **Webアプリ:** Next.js, React, **NextAuth.js (Google OAuth)**
